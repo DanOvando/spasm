@@ -1,3 +1,18 @@
+#' \code{calcualte_recruits} calculates recruits
+#' as a function of spawning stock biomass under
+#' various forms of density dependence
+#'
+#' @param pop
+#' @param fish
+#' @param num_patches
+#' @param patch_habitat
+#' @param phase
+#'
+#' @return recruits of age 1 in each patch
+#' @export
+#'
+#' @examples calculate_recruits(pop, fish, num_patches = 10, phase = 'grow')
+
 calculate_recruits <- function(pop,fish,num_patches,patch_habitat = 1, phase = 'burn'){
 
   if (patch_habitat == 1) {

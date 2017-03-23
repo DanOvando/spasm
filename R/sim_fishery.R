@@ -1,3 +1,18 @@
+#' \code{sim_fishery} simulates an age structured spatially explicit
+#' model forward with fleets etc.
+#'
+#' @param fish
+#' @param fleet
+#' @param manager
+#' @param num_patches
+#' @param sim_years
+#' @param ...
+#'
+#' @return a pop object with population and catch trajectories
+#' @export
+#'
+#' @examples sim_fishery(fish = fish, fleet = fleet,...)
+#'
 sim_fishery <- function(fish, fleet, manager,num_patches = 10,sim_years = 25,...){
 
 pop <-  expand.grid(year = 1:sim_years, patch = 1:num_patches, age = 1:fish$max_age) %>%
@@ -82,8 +97,6 @@ for (y in 1:sim_years){
     model_phase <- 'recruit'
 
   }
-
-  print(y)
 
 }
 

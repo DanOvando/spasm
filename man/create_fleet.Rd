@@ -10,6 +10,9 @@ create_fleet(eq_f = NA, length_50_sel = NA, length_95_sel = NA,
 \arguments{
 \item{fish}{}
 }
+\value{
+a fleet object
+}
 \description{
 create_fleet
 }

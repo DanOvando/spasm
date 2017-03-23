@@ -1,3 +1,13 @@
+#' \code{grow_and_die} runs growth mortality and fishing
+#'
+#' @param numbers
+#' @param fish
+#' @param fleet
+#'
+#' @return numbers and catch at age for all ages above recruits
+#' @export
+#'
+#' @examples grow_and_die(numbers, fish, fleet)
 grow_and_die <- function(numbers, fish,fleet){
 
 
