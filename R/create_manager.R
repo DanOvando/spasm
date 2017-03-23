@@ -6,9 +6,12 @@
 #' @export
 #'
 #' @examples create_manager(year_mpa = 12)
-create_manager <- function(year_mpa = 15){
+create_manager <- function(year_mpa = 15,
+                           mpa_size = 0.25){
 
 
-  manager <- list(year_mpa = year_mpa)
+
+  manager <- list(year_mpa = year_mpa,
+                  mpa_size = mpa_size)
 
 }

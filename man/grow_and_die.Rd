@@ -4,7 +4,7 @@
 \alias{grow_and_die}
 \title{\code{grow_and_die} runs growth mortality and fishing}
 \usage{
-grow_and_die(numbers, fish, fleet)
+grow_and_die(numbers, mpa, fish, fleet)
 }
 \arguments{
 \item{fleet}{}

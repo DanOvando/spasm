@@ -8,12 +8,12 @@
 #' @export
 #'
 #' @examples grow_and_die(numbers, fish, fleet)
-grow_and_die <- function(numbers, fish,fleet){
+grow_and_die <- function(numbers, mpa,fish,fleet){
 
 
   survivors <- vector(mode = 'numeric', length = length(numbers))
 
-  survival  <- exp(-(fish$m + (fleet$eq_f * fleet$sel_at_age)))
+  survival  <- exp(-(fish$m + (fleet$eq_f * (!mpa) * fleet$sel_at_age)))
 
   death <-  1 - survival
 

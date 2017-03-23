@@ -4,7 +4,7 @@
 \alias{create_manager}
 \title{create manager}
 \usage{
-create_manager(year_mpa = 15)
+create_manager(year_mpa = 15, mpa_size = 0.25)
 }
 \arguments{
 \item{year_mpa}{}

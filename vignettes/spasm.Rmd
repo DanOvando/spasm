@@ -13,6 +13,47 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 
+library(tidyverse)
+library(spasm)
+library(stringr)
+library(rfishbase)
+library(modelr)
+
+fish <- create_fish()
+
+fleet <- create_fleet(eq_f = .2, length_50_sel = 34, length_95_sel = 36, fish = fish,
+                      mpa_reaction = 'concentrate')
+
+manager <-  create_manager(mpa_size = 0.25)
+
+without_mpa <- spasm::sim_fishery(fish = fish, fleet = fleet, manager  = create_manager(mpa_size = 0, year_mpa = 5), num_patches = 25) %>% 
+  mutate(run = 'without_mpa')
+
+with_mpa <- spasm::sim_fishery(fish = fish, fleet = fleet, manager  = create_manager(mpa_size = 0.725, year_mpa = 5), num_patches = 25) %>% 
+  mutate(run = 'with_mpa')
+
+ with_mpa %>% 
+  group_by(year,mpa) %>% 
+  summarise(numbers = sum(numbers), ssb = sum(ssb)) %>% 
+  ggplot(aes(year,ssb, color = mpa)) + 
+  geom_line() + 
+  geom_ref_line(v = manager$year_mpa)
+ 
+  with_mpa %>% 
+  group_by(year) %>% 
+  summarise(numbers = sum(numbers), ssb = sum(ssb)) %>% 
+  ggplot(aes(year,ssb)) + 
+  geom_line() + 
+  geom_ref_line(v =5, colour = 'red')
+  
+  with_mpa %>% 
+    bind_rows(without_mpa) %>% 
+    group_by(year, run) %>% 
+    summarise(ssb = sum(ssb)) %>% 
+    ggplot(aes(year,ssb, color = run)) + 
+    geom_line() + 
+      geom_ref_line(v = 5, colour = 'red')
+
 
 
 
