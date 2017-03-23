@@ -12,3 +12,6 @@ Imports: tidyverse,
     rfishbase,
     readr,
     modelr
+Suggests: knitr,
+    rmarkdown
+VignetteBuilder: knitr
