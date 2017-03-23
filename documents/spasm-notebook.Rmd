@@ -1,0 +1,8 @@
+---
+title: "SpASM"
+output: html_notebook
+---
+
+This repo is an updated version of the GASP module developed for Ovando et al. 2016 Fish and Fisheries. 
+
+Development is centered around support of 
