@@ -1,0 +1,26 @@
+#' \code{move_fish} moves fish via a movement function
+#'
+#' @param here_pop
+#'
+#' @return relocated adult fish
+#' @export
+#'
+#' @examples move_fish(pop)
+move_fish <- function(here_pop, num_patches, fish, move_matrix){
+
+  # from Siegal et al. 2003
+
+  move_foo <- function(numbers, move_matrix) {
+
+    moved <- as.numeric(numbers %*% move_matrix)
+
+  }
+
+  there_pop <- here_pop %>%
+    group_by(age) %>%
+    mutate(numbers = move_foo(numbers, move_matrix)) %>%
+    ungroup()
+
+  return(there_pop)
+
+}

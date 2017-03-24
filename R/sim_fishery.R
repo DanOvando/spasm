@@ -19,6 +19,7 @@ sim_fishery <-
            manager,
            num_patches = 10,
            sim_years = 25,
+           burn_year = 10,
            ...) {
     pop <-
       expand.grid(
@@ -62,10 +63,57 @@ sim_fishery <-
 
     model_phase <- 'burn'
 
-    for (y in 1:sim_years) {
-      # Move adults
+    adult_move_grid <-
+      expand.grid(source = 1:num_patches,
+                  sink = 1:num_patches) %>%
+      mutate(
+        distance = source - sink,
+        prob = 1 / ((2 * pi) ^ (1 / 2) * fish$adult_movement) * exp(-(distance) ^
+                                                                      2 / (2 * fish$adult_movement ^ 2))
+      ) %>%
+      group_by(source) %>%
+      mutate(prob_move = prob / sum(prob))
 
-      pop[pop$year == y,] <- move_adults(pop %>% filter(year == y))
+    adult_move_matrix <- adult_move_grid %>%
+      ungroup() %>%
+      select(source, sink, prob_move) %>%
+      spread(sink, prob_move) %>%
+      select(-source) %>%
+      as.matrix()
+
+    larval_move_grid <-
+      expand.grid(source = 1:num_patches,
+                  sink = 1:num_patches) %>%
+      mutate(
+        distance = source - sink,
+        prob = 1 / ((2 * pi) ^ (1 / 2) * fish$adult_movement) * exp(-(distance) ^
+                                                                      2 / (2 * fish$adult_movement ^ 2))
+      ) %>%
+      group_by(source) %>%
+      mutate(prob_move = prob / sum(prob))
+
+    larval_move_matrix <- larval_move_grid %>%
+      ungroup() %>%
+      select(source, sink, prob_move) %>%
+      spread(sink, prob_move) %>%
+      select(-source) %>%
+      as.matrix()
+
+
+    eventual_f <- fleet$eq_f
+
+    fleet$eq_f <- 0
+
+    for (y in 1:(sim_years - 1)) {
+      # Move adults
+      pop[pop$year == y &
+            pop$age > 1,] <-
+        move_fish(
+          pop %>% filter(year == y, age > 1),
+          fish = fish,
+          num_patches = num_patches,
+          move_matrix = adult_move_matrix
+        )
 
       # change management
 
@@ -121,7 +169,7 @@ sim_fishery <-
           biomass_caught = numbers_caught * weight_at_age
         )
 
-      # spawn
+      # spawn ----
 
       pop$numbers[pop$year == (y + 1) &
                     pop$age == 1] <-
@@ -129,12 +177,15 @@ sim_fishery <-
           pop = pop[pop$year == (y + 1), ],
           fish = fish,
           num_patches = num_patches,
-          phase = model_phase
+          phase = model_phase,
+          move_matrix = larval_move_matrix
         )
 
-      if (y == 1) {
+
+      if (y == burn_year) {
         fish$ssb0 <- pop %>%
-          filter(year == 1) %>%
+          filter(year == burn_year) %>%
+          group_by(patch) %>%
           summarise(ssb = sum(ssb)) %>%
           ungroup() %>%  {
             (.$ssb)
@@ -142,8 +193,16 @@ sim_fishery <-
 
         model_phase <- 'recruit'
 
+        fleet$eq_f <- eventual_f
+
       }
+
+
     }
+
+
+    pop <- pop %>%
+      filter(year > burn_year)
 
     return(pop)
 
