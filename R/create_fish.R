@@ -53,8 +53,6 @@ create_fish <- function(common_name = 'white seabass',
                         query_fishbase = T,
                         lmat_to_linf_ratio = 0.6) {
   fish <- list()
-
-
   # check fishbase -------------
 
   if (is.na(scientific_name) == F & query_fishbase == T) {
@@ -86,20 +84,42 @@ create_fish <- function(common_name = 'white seabass',
 
     fb_life_history <- popgrowth(fishbase_matches$full_name,
                                  fields = c('Loo', 'K', 'to', 'M'))
+    if (dim(fb_life_history)[1] == 0){
+
+      fb_life_history <-  data_frame(Loo = NA, K = NA, to = NA, M = NA)
+
+    }
+
+    fb_life_history <- fb_life_history %>%
+      # group_by(sciname) %>%
+      summarise(Loo = median(Loo),
+                K = median(K),
+                to = median(to),
+                M = median(M))
+
 
     # a= poplw(fishbase_matches$full_name)
     fb_length_weight <-
       poplw(fishbase_matches$full_name, fields = c('a', 'b'))
 
-    fb_length_weight$a <-  fb_length_weight$a / 1000 # convert to kg
-  }
+    if (dim(fb_length_weight)[1] == 0){
 
+      fb_length_weight <-  data_frame(a = NA, b = NA)
+
+    }
+
+    fb_length_weight <- fb_length_weight %>%
+      summarise(a = median(a),
+                b = median(b),
+                a = a / 1000)
+
+    # fb_length_weight$a <-  fb_length_weight$a / 1000 # convert to kg
+  }
 
   # process lengths ---------------------------------------------------------
 
   if (is.na(linf)) {
     linf <- fb_life_history$Loo
-
   }
 
   if (is.na(vbk)) {
@@ -111,9 +131,9 @@ create_fish <- function(common_name = 'white seabass',
 
   }
 
-  if (any(c(is.na(linf), is.na(vbk), is.na(t0)))) {
-    stop("Not enough Von Bert Data")
 
+  if (any(c(is.na(linf), is.na(vbk), is.na(t0)))) {
+    warning("Not enough Von Bert Data")
   }
 
   fish$length_at_age <- linf * (1 - exp(-vbk * ((1:max_age - t0))))
@@ -156,8 +176,9 @@ create_fish <- function(common_name = 'white seabass',
     ) * (((1:max_age) - age_50_mature) / (age_95_mature - age_50_mature)
     )))))
 
+  fish$scientific_name <- scientific_name
+  fish$common_name <- common_name
   fish$ssb_at_age <- fish$maturity_at_age * fish$weight_at_age
-
   fish$linf <- linf
   fish$vbk  <-  vbk
   fish$t0 <-  t0
@@ -179,6 +200,5 @@ create_fish <- function(common_name = 'white seabass',
   fish$lmat_to_linf_ratio <-  lmat_to_linf_ratio
   fish$length_units <-  length_units
   fish$weight_units <-  weight_units
-
   return(fish)
 }

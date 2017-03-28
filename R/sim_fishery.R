@@ -117,12 +117,12 @@ sim_fishery <-
 
       # change management
 
-      if (y == manager$year_mpa) {
+      if ((y - burn_year) == manager$year_mpa) {
         prop_mpas <-  floor(num_patches * manager$mpa_size)
 
         mpa_locations <- sample(1:num_patches, prop_mpas)
 
-        pop$mpa[pop$patch %in% mpa_locations] <-  T
+        pop$mpa[pop$patch %in% mpa_locations & pop$year >= y] <-  T
 
         # reallocate fishing effort
 

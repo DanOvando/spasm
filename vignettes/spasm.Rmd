@@ -35,7 +35,7 @@ fish <- create_fish(adult_movement = 15,
 
 fleet <-
   create_fleet(
-    eq_f = .5,
+    eq_f = .2,
     length_50_sel = 1,
     length_95_sel = 2,
     fish = fish,
@@ -47,7 +47,7 @@ without_mpa <-
   spasm::sim_fishery(
     fish = fish,
     fleet = fleet,
-    manager  = create_manager(mpa_size = 0, year_mpa = 45),
+    manager  = create_manager(mpa_size = 0, year_mpa = 5),
     num_patches = 20,
     burn_year = 25,
     sim_years = 60
@@ -58,12 +58,16 @@ with_mpa <-
   spasm::sim_fishery(
     fish = fish,
     fleet = fleet,
-    manager  = create_manager(mpa_size = 0.2, year_mpa = 45),
+    manager  = create_manager(mpa_size = 0.5, year_mpa = 3),
     num_patches = 20,
     burn_year = 25,
     sim_years = 60
   ) %>%
   mutate(run = 'with_mpa')
+
+with_mpa %>% 
+  group_by(year) %>% 
+  summarise(prop_mpa = mean(mpa))
 
 
 without_mpa %>%
