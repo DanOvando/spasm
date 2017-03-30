@@ -14,4 +14,6 @@ create_manager <- function(year_mpa = 15,
   manager <- list(year_mpa = year_mpa,
                   mpa_size = mpa_size)
 
+  return(manager)
+
 }

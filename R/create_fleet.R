@@ -33,6 +33,6 @@ create_fleet <- function(eq_f = NA,
     length_50_sel = length_50_sel,
     length_95_sel = length_95_sel,
     sel_at_age = sel_at_age,
-    map_reaction = mpa_reaction
+    mpa_reaction = mpa_reaction
   )
 }

@@ -114,7 +114,7 @@ create_fish <- function(common_name = 'white seabass',
                 a = a / 1000)
 
     # fb_length_weight$a <-  fb_length_weight$a / 1000 # convert to kg
-  }
+
 
   # process lengths ---------------------------------------------------------
 
@@ -131,6 +131,16 @@ create_fish <- function(common_name = 'white seabass',
 
   }
 
+    if (is.na(weight_a)) {
+      weight_a <- fb_length_weight$a
+
+    }
+    if (is.na(weight_b)) {
+      weight_b <- fb_length_weight$b
+
+    }
+
+} #close fishbase query
 
   if (any(c(is.na(linf), is.na(vbk), is.na(t0)))) {
     warning("Not enough Von Bert Data")
@@ -139,15 +149,6 @@ create_fish <- function(common_name = 'white seabass',
   fish$length_at_age <- linf * (1 - exp(-vbk * ((1:max_age - t0))))
 
   # process weight
-
-  if (is.na(weight_a)) {
-    weight_a <- fb_length_weight$a
-
-  }
-  if (is.na(weight_b)) {
-    weight_b <- fb_length_weight$b
-
-  }
 
   fish$weight_at_age <- weight_a * fish$length_at_age ^ weight_b
 

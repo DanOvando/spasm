@@ -32,10 +32,18 @@ sim_fishery <-
         biomass = NA,
         ssb = NA,
         numbers_caught = NA,
+        profits = NA,
+        effort = 0,
+        f = 0,
         mpa = F
       ) %>%
       as_data_frame() %>%
       arrange(year, patch, age)
+
+    effort <- vector(mode = 'double', length = sim_years)
+
+    f <- vector(mode = 'double', length = sim_years)
+
 
     n0_at_age <-
       fish$r0 / num_patches * exp(-fish$m * (0:(fish$max_age - 1)))
@@ -100,14 +108,14 @@ sim_fishery <-
       as.matrix()
 
 
-    eventual_f <- fleet$eq_f
-
-    fleet$eq_f <- 0
+    # eventual_f <- fleet$eq_f
+    #
+    # fleet$eq_f <- 0
 
     for (y in 1:(sim_years - 1)) {
       # Move adults
       pop[pop$year == y &
-            pop$age > 1,] <-
+            pop$age > 1, ] <-
         move_fish(
           pop %>% filter(year == y, age > 1),
           fish = fish,
@@ -125,38 +133,57 @@ sim_fishery <-
         pop$mpa[pop$patch %in% mpa_locations & pop$year >= y] <-  T
 
         # reallocate fishing effort
-
-        if (fleet$map_reaction == 'concentrate') {
-          fleet$eq_f <- fleet$eq_f / (1 - length(mpa_locations) / num_patches)
-        } else if (fleet$map_reaction == 'dilute') {
-          fleet$eq_f <- fleet$eq_f * (1 - length(mpa_locations) / num_patches)
+        if (fleet$mpa_reaction == 'concentrate' &
+            fleet$fleet_model == 'constant-effort') {
+          # fleet$eq_f <- fleet$eq_f / (1 - length(mpa_locations) / num_patches)
+          effort[y] <-
+            effort[y - 1] / (1 - length(mpa_locations) / num_patches)
 
         }
 
       }
+      # fleet response
+      pop[pop$year == y, 'effort'] <-
+        distribute_fleet(
+          pop = pop %>% filter(year == y),
+          effort = effort[y],
+          fleet = fleet,
+          num_patches = num_patches,
+          mpa = mpa
+        )
+
+      pop[pop$year == y, 'f'] <-
+        pop[pop$year == y, 'effort'] * fleet$q
+
       # grow and die -----
 
-      # growth_and_death <-  pop[pop$year == y,] %>%
-      #   group_by(patch) %>%
-      #   mutate(g_and_d = list(grow_and_die(numbers, fish, fleet))) %>%
-      #   ungroup() %>% {
-      #   purrr::transpose(.$g_and_d)
-      #   } %>%
-      #   map(unlist)
-
       pop[pop$year == (y + 1), 'numbers'] <-
-        pop[pop$year == y,] %>%
+        pop[pop$year == y, ] %>%
         group_by(patch) %>%
-        mutate(numbers = grow_and_die(numbers, mpa, fish, fleet)$survivors) %>%
+        mutate(numbers = grow_and_die(
+          numbers = numbers,
+          f = f,
+          mpa = mpa,
+          fish = fish,
+          fleet = fleet
+        )$survivors) %>%
         ungroup() %>%
         {
           .$numbers
         }
 
+
       pop[pop$year == y, 'numbers_caught'] <-
-        pop[pop$year == y,] %>%
+        pop[pop$year == y, ] %>%
         group_by(patch) %>%
-        mutate(numbers_caught = grow_and_die(numbers, mpa, fish, fleet)$caught) %>%
+        mutate(numbers_caught = grow_and_die(
+          numbers = numbers,
+          f = f,
+          mpa = mpa,
+          fish = fish,
+          fleet = fleet
+        )$caught) %>%
+
         ungroup() %>%
         {
           .$numbers_caught
@@ -166,15 +193,27 @@ sim_fishery <-
         mutate(
           ssb = numbers * ssb_at_age,
           biomass = numbers * weight_at_age,
-          biomass_caught = numbers_caught * weight_at_age
+          biomass_caught = numbers_caught * weight_at_age,
+          profits = biomass_caught * fish$price - fleet$cost * effort ^ fleet$beta
         )
+
+      # Adjust fleet
+
+      if (y > burn_year & fleet$fleet_model == 'open-access') {
+        effort[y + 1] <-
+          max(0, effort[y] + fleet$theta * sum(pop$profits[pop$year == y]))
+      } else if (y > burn_year &
+                 fleet$fleet_model == 'constant-effort') {
+        effort[y + 1] <- effort[y]
+
+      }
 
       # spawn ----
 
       pop$numbers[pop$year == (y + 1) &
                     pop$age == 1] <-
         calculate_recruits(
-          pop = pop[pop$year == (y + 1), ],
+          pop = pop[pop$year == (y + 1),],
           fish = fish,
           num_patches = num_patches,
           phase = model_phase,
@@ -193,7 +232,9 @@ sim_fishery <-
 
         model_phase <- 'recruit'
 
-        fleet$eq_f <- eventual_f
+        effort[y + 1] <- fleet$initial_effort
+
+        # fleet$eq_f <- eventual_f
 
       }
 
