@@ -20,6 +20,7 @@ sim_fishery <-
            num_patches = 10,
            sim_years = 25,
            burn_year = 10,
+           crashed_pop = 1e-3,
            ...) {
     pop <-
       expand.grid(
@@ -111,11 +112,10 @@ sim_fishery <-
     # eventual_f <- fleet$eq_f
     #
     # fleet$eq_f <- 0
-
     for (y in 1:(sim_years - 1)) {
       # Move adults
       pop[pop$year == y &
-            pop$age > 1, ] <-
+            pop$age > 1,] <-
         move_fish(
           pop %>% filter(year == y, age > 1),
           fish = fish,
@@ -133,16 +133,59 @@ sim_fishery <-
         pop$mpa[pop$patch %in% mpa_locations & pop$year >= y] <-  T
 
         # reallocate fishing effort
-        if (fleet$mpa_reaction == 'concentrate' &
-            fleet$fleet_model == 'constant-effort') {
-          # fleet$eq_f <- fleet$eq_f / (1 - length(mpa_locations) / num_patches)
-          effort[y] <-
-            effort[y - 1] / (1 - length(mpa_locations) / num_patches)
+        # if (fleet$mpa_reaction == 'concentrate' &
+        #     fleet$fleet_model == 'constant-effort') {
+        #   # fleet$eq_f <- fleet$eq_f / (1 - length(mpa_locations) / num_patches)
+        #   # effort[y] <-
+        #   #   effort[y - 1] / (1 - length(mpa_locations) / num_patches)
+        #
+        # }
+
+      }
+      # fleet response
+
+      if (fleet$fleet_model == 'constant-catch'){
+
+      # browser()
+
+      # catch_target(total_effort = 1,target_catch =
+      #            fleet$target_catch,
+      #          pop = pop %>% filter(year == y),
+      #          num_patches = num_patches,
+      #          mpa = mpa,
+      #          fleet = fleet)
+
+
+        effort_for_catch <- nlminb(1, catch_target, target_catch =
+                 fleet$target_catch,
+               pop = pop %>% filter(year == y),
+               num_patches = num_patches,
+               mpa = mpa,
+               fleet = fleet,
+               lower = 0,
+               use = 'opt',
+               fish = fish)
+
+        effort[y] <- effort_for_catch$par
+
+        popcheck <- catch_target(total_effort = effort_for_catch$par,target_catch =
+                       fleet$target_catch,
+                     pop = pop %>% filter(year == y),
+                     num_patches = num_patches,
+                     mpa = mpa,
+                     fleet = fleet,
+                     use = 'check',
+                     fish = fish) %>% sum()
+
+        if (popcheck < crashed_pop){
+
+          warning('constant catch killing population')
 
         }
 
       }
-      # fleet response
+
+
       pop[pop$year == y, 'effort'] <-
         distribute_fleet(
           pop = pop %>% filter(year == y),
@@ -158,7 +201,7 @@ sim_fishery <-
       # grow and die -----
 
       pop[pop$year == (y + 1), 'numbers'] <-
-        pop[pop$year == y, ] %>%
+        pop[pop$year == y,] %>%
         group_by(patch) %>%
         mutate(numbers = grow_and_die(
           numbers = numbers,
@@ -174,7 +217,7 @@ sim_fishery <-
 
 
       pop[pop$year == y, 'numbers_caught'] <-
-        pop[pop$year == y, ] %>%
+        pop[pop$year == y,] %>%
         group_by(patch) %>%
         mutate(numbers_caught = grow_and_die(
           numbers = numbers,
@@ -188,7 +231,6 @@ sim_fishery <-
         {
           .$numbers_caught
         }
-
       pop <- pop %>%
         mutate(
           ssb = numbers * ssb_at_age,
@@ -213,7 +255,7 @@ sim_fishery <-
       pop$numbers[pop$year == (y + 1) &
                     pop$age == 1] <-
         calculate_recruits(
-          pop = pop[pop$year == (y + 1),],
+          pop = pop[pop$year == (y + 1), ],
           fish = fish,
           num_patches = num_patches,
           phase = model_phase,
@@ -233,6 +275,7 @@ sim_fishery <-
         model_phase <- 'recruit'
 
         effort[y + 1] <- fleet$initial_effort
+        # pop$effort[pop$year == (y + 1)] <-  fleet$initial_effort
 
         # fleet$eq_f <- eventual_f
 
@@ -243,7 +286,8 @@ sim_fishery <-
 
 
     pop <- pop %>%
-      filter(year > burn_year)
+      filter(year > burn_year, year < max(year)) %>%
+      mutate(eventual_mpa = patch %in% mpa_locations)
 
     return(pop)
 

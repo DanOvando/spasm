@@ -51,7 +51,8 @@ create_fish <- function(common_name = 'white seabass',
                         adult_movement = 2,
                         larval_movement = 2,
                         query_fishbase = T,
-                        lmat_to_linf_ratio = 0.6) {
+                        lmat_to_linf_ratio = 0.6,
+                        price = 1) {
   fish <- list()
   # check fishbase -------------
 
@@ -201,5 +202,7 @@ create_fish <- function(common_name = 'white seabass',
   fish$lmat_to_linf_ratio <-  lmat_to_linf_ratio
   fish$length_units <-  length_units
   fish$weight_units <-  weight_units
+  fish$price <- price
+
   return(fish)
 }
