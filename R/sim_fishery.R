@@ -13,6 +13,8 @@
 #'
 #' @examples sim_fishery(fish = fish, fleet = fleet,...)
 #'
+#' @useDynLib spasm
+#' @importFrom Rcpp sourceCpp
 sim_fishery <-
   function(fish,
            fleet,
@@ -95,8 +97,8 @@ sim_fishery <-
                   sink = 1:num_patches) %>%
       mutate(
         distance = source - sink,
-        prob = 1 / ((2 * pi) ^ (1 / 2) * fish$adult_movement) * exp(-(distance) ^
-                                                                      2 / (2 * fish$adult_movement ^ 2))
+        prob = 1 / ((2 * pi) ^ (1 / 2) * fish$larval_movement) * exp(-(distance) ^
+                                                                      2 / (2 * fish$larval_movement ^ 2))
       ) %>%
       group_by(source) %>%
       mutate(prob_move = prob / sum(prob))
@@ -114,7 +116,10 @@ sim_fishery <-
     # fleet$eq_f <- 0
     for (y in 1:(sim_years - 1)) {
       # Move adults
-      pop[pop$year == y &
+
+      now_year <- pop$year == y
+
+      pop[now_year &
             pop$age > 1,] <-
         move_fish(
           pop %>% filter(year == y, age > 1),
@@ -186,7 +191,7 @@ sim_fishery <-
       }
 
 
-      pop[pop$year == y, 'effort'] <-
+      pop[now_year, 'effort'] <-
         distribute_fleet(
           pop = pop %>% filter(year == y),
           effort = effort[y],
@@ -195,13 +200,13 @@ sim_fishery <-
           mpa = mpa
         )
 
-      pop[pop$year == y, 'f'] <-
-        pop[pop$year == y, 'effort'] * fleet$q
+      pop[now_year, 'f'] <-
+        pop[now_year, 'effort'] * fleet$q
 
       # grow and die -----
 
       pop[pop$year == (y + 1), 'numbers'] <-
-        pop[pop$year == y,] %>%
+        pop[now_year,] %>%
         group_by(patch) %>%
         mutate(numbers = grow_and_die(
           numbers = numbers,
@@ -216,8 +221,8 @@ sim_fishery <-
         }
 
 
-      pop[pop$year == y, 'numbers_caught'] <-
-        pop[pop$year == y,] %>%
+      pop[now_year, 'numbers_caught'] <-
+        pop[now_year,] %>%
         group_by(patch) %>%
         mutate(numbers_caught = grow_and_die(
           numbers = numbers,
@@ -243,7 +248,7 @@ sim_fishery <-
 
       if (y > burn_year & fleet$fleet_model == 'open-access') {
         effort[y + 1] <-
-          max(0, effort[y] + fleet$theta * sum(pop$profits[pop$year == y]))
+          max(0, effort[y] + fleet$theta * sum(pop$profits[now_year]))
       } else if (y > burn_year &
                  fleet$fleet_model == 'constant-effort') {
         effort[y + 1] <- effort[y]

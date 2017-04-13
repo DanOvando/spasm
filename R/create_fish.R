@@ -55,7 +55,6 @@ create_fish <- function(common_name = 'white seabass',
                         price = 1) {
   fish <- list()
   # check fishbase -------------
-
   if (is.na(scientific_name) == F & query_fishbase == T) {
     # scientific_name <- tolower(scientific_name)
 

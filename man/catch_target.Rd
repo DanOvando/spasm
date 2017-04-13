@@ -5,7 +5,7 @@
 \title{\code{catch_target} finds the right effort to produce a target level of catch}
 \usage{
 catch_target(total_effort, target_catch, pop, num_patches, mpa, fleet,
-  use = "opt")
+  use = "opt", fish)
 }
 \arguments{
 \item{fleet}{}

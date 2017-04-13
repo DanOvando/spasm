@@ -109,7 +109,7 @@ calculate_recruits <-
           )) %>% {
             .$recruits
           }
-        recruits <- recruits %*% move_matrix
+        recruits <- crossprod(recruits, move_matrix)
 
       }
 

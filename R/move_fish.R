@@ -10,15 +10,17 @@ move_fish <- function(here_pop, num_patches, fish, move_matrix){
 
   # from Siegal et al. 2003
 
-  move_foo <- function(numbers, move_matrix) {
-
-    moved <- as.numeric(numbers %*% move_matrix)
-
-  }
+  # move_foo <- function(numbers, move_matrix) {
+  #
+  #   moved <- as.numeric(numbers %*% move_matrix)
+  #
+  # }
 
   there_pop <- here_pop %>%
     group_by(age) %>%
-    mutate(numbers = move_foo(numbers, move_matrix)) %>%
+    # mutate(numbers = eigen_mat_mult(matrix(numbers) %>% t(), move_matrix) %>% as.numeric()) %>%
+    mutate(numbers = crossprod(numbers, move_matrix) %>% as.numeric()) %>%
+    # mutate(numbers = move_foo(numbers, move_matrix)) %>%
     ungroup()
 
   return(there_pop)

@@ -11,7 +11,10 @@ RoxygenNote: 6.0.1
 Imports: tidyverse,
     rfishbase,
     readr,
-    modelr
+    modelr,
+    Rcpp,
+    RcppEigen
 Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr
+LinkingTo: Rcpp
