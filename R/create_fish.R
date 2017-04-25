@@ -32,7 +32,7 @@ create_fish <- function(common_name = 'white seabass',
                         scientific_name = "Atractoscion nobilis",
                         linf = NA,
                         vbk = NA,
-                        t0 = NA,
+                        t0 = 0,
                         length_units = 'cm',
                         max_age = 20,
                         weight_a = NA,
@@ -50,9 +50,19 @@ create_fish <- function(common_name = 'white seabass',
                         density_dependence_form = 1,
                         adult_movement = 2,
                         larval_movement = 2,
-                        query_fishbase = T,
-                        lmat_to_linf_ratio = 0.6,
+                        query_fishbase = F,
+                        lhi_type = 1,
+                        lmat_to_linf_ratio = NA,
                         price = 1) {
+
+  lhi_groups <- lhi %>%
+    group_by(type) %>%
+    summarise(mean_m_v_k = mean(m_v_k, na.rm = T),
+              mean_lmat_v_linf = mean(lmat_v_linf, na.rm = T),
+              mean_m_by_tm = mean(m_times_tmat, na.rm = T),
+              mean_wa = mean(lw_a, na.rm = T),
+              mean_wb = mean(lw_b, na.rm = T))
+
   fish <- list()
   # check fishbase -------------
   if (is.na(scientific_name) == F & query_fishbase == T) {
@@ -142,8 +152,21 @@ create_fish <- function(common_name = 'white seabass',
 
 } #close fishbase query
 
-  if (any(c(is.na(linf), is.na(vbk), is.na(t0)))) {
-    warning("Not enough Von Bert Data")
+  # if (any(c(is.na(linf), is.na(vbk), is.na(t0)))) {
+  #   warning("Not enough Von Bert Data")
+  # }
+
+  if (is.na(vbk)){
+
+    vbk <- m / (lhi_groups$mean_m_v_k[lhi_groups$type == lhi_type])
+
+  }
+  if (is.na(weight_a)){
+
+    weight_a <-lhi_groups$mean_wa[lhi_groups$type == lhi_type]
+
+    weight_b <-lhi_groups$mean_wb[lhi_groups$type == lhi_type]
+
   }
 
   fish$length_at_age <- linf * (1 - exp(-vbk * ((1:max_age - t0))))
@@ -151,6 +174,12 @@ create_fish <- function(common_name = 'white seabass',
   # process weight
 
   fish$weight_at_age <- weight_a * fish$length_at_age ^ weight_b
+
+ if (is.na(lmat_to_linf_ratio)) {
+
+   lmat_to_linf_ratio <- lhi_groups$mean_lmat_v_linf[lhi_groups$type == lhi_type]
+
+ }
 
   # process maturity
   if ((is.na(age_50_mature) |

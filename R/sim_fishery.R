@@ -24,6 +24,13 @@ sim_fishery <-
            burn_year = 10,
            crashed_pop = 1e-3,
            ...) {
+
+    if (fleet$fleet_model == 'supplied-catch'){
+
+      sim_years <- sim_years + 1
+
+    }
+
     pop <-
       expand.grid(
         year = 1:sim_years,
@@ -47,6 +54,7 @@ sim_fishery <-
 
     f <- vector(mode = 'double', length = sim_years)
 
+    mpa_locations <- -1
 
     n0_at_age <-
       fish$r0 / num_patches * exp(-fish$m * (0:(fish$max_age - 1)))
@@ -149,17 +157,7 @@ sim_fishery <-
       }
       # fleet response
 
-      if (fleet$fleet_model == 'constant-catch'){
-
-      # browser()
-
-      # catch_target(total_effort = 1,target_catch =
-      #            fleet$target_catch,
-      #          pop = pop %>% filter(year == y),
-      #          num_patches = num_patches,
-      #          mpa = mpa,
-      #          fleet = fleet)
-
+      if (fleet$fleet_model == 'constant-catch' & y > burn_year){
 
         effort_for_catch <- nlminb(1, catch_target, target_catch =
                  fleet$target_catch,
@@ -172,24 +170,40 @@ sim_fishery <-
                fish = fish)
 
         effort[y] <- effort_for_catch$par
-
-        popcheck <- catch_target(total_effort = effort_for_catch$par,target_catch =
-                       fleet$target_catch,
-                     pop = pop %>% filter(year == y),
-                     num_patches = num_patches,
-                     mpa = mpa,
-                     fleet = fleet,
-                     use = 'check',
-                     fish = fish) %>% sum()
-
-        if (popcheck < crashed_pop){
-
-          warning('constant catch killing population')
-
-        }
+        # popcheck <- catch_target(total_effort = effort_for_catch$par,target_catch =
+        #                fleet$target_catch,
+        #              pop = pop %>% filter(year == y),
+        #              num_patches = num_patches,
+        #              mpa = mpa,
+        #              fleet = fleet,
+        #              use = 'check',
+        #              fish = fish) %>% sum()
+        #
+        # if (popcheck < crashed_pop){
+        #
+        #   warning('constant catch killing population')
+        #
+        # }
 
       }
 
+      if (fleet$fleet_model == 'supplied-catch' & y > burn_year){
+
+        target_catch <- fleet$catches[y - burn_year]
+
+        effort_for_catch <- nlminb(1, catch_target, target_catch =
+                                     target_catch,
+                                   pop = pop %>% filter(year == y),
+                                   num_patches = num_patches,
+                                   mpa = mpa,
+                                   fleet = fleet,
+                                   lower = 0,
+                                   use = 'opt',
+                                   fish = fish)
+
+        effort[y] <- effort_for_catch$par
+
+      }
 
       pop[now_year, 'effort'] <-
         distribute_fleet(
@@ -280,15 +294,11 @@ sim_fishery <-
         model_phase <- 'recruit'
 
         effort[y + 1] <- fleet$initial_effort
-        # pop$effort[pop$year == (y + 1)] <-  fleet$initial_effort
-
-        # fleet$eq_f <- eventual_f
 
       }
 
 
     }
-
 
     pop <- pop %>%
       filter(year > burn_year, year < max(year)) %>%

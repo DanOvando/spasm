@@ -32,6 +32,7 @@ create_fleet <- function(eq_f = NA,
                          effort_allocation = 'gravity',
                          initial_effort = 100,
                          target_catch = 0,
+                         catches = NA,
                          fish) {
 
 
@@ -59,6 +60,7 @@ create_fleet <- function(eq_f = NA,
     fleet_model = fleet_model,
     effort_allocation = effort_allocation,
     initial_effort = initial_effort,
-    target_catch = target_catch
+    target_catch = target_catch,
+    catches = catches
   )
 }
