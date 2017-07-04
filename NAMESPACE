@@ -14,4 +14,3 @@ export(mpa_counterfactual)
 export(sample_lengths)
 export(sim_fishery)
 importFrom(Rcpp,sourceCpp)
-
