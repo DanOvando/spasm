@@ -8,21 +8,41 @@
 #' @export
 #'
 #' @examples distribute_fleet(pop, effort, fleet)
-distribute_fleet <- function(pop, effort, fleet, num_patches, mpa) {
-  if (fleet$effort_allocation == 'simple') {
-    pop$effort[pop$mpa == F] <-
-      effort / length(unique(pop$patch[pop$mpa == F]))
+distribute_fleet <-
+  function(pop,
+           effort,
+           prior_profits,
+           year,
+           burn_year,
+           fleet,
+           num_patches,
+           mpa) {
+    if (fleet$effort_allocation == 'simple') {
+      pop$effort[pop$mpa == F] <-
+        effort / length(unique(pop$patch[pop$mpa == F]))
 
-    # pop$effort <- effort / num_patches
+      # pop$effort <- effort / num_patches
+
+    }
+    if (fleet$effort_allocation == 'gravity') {
+      pop$effort[pop$mpa == F] <-
+        effort * ((pop$numbers[pop$mpa == F] * pop$ssb_at_age[pop$mpa == F]) / sum((pop$numbers[pop$mpa == F] * pop$ssb_at_age[pop$mpa == F])))
+
+    }
+
+    if (fleet$effort_allocation == 'profit-gravity') {
+      if (all(is.na(prior_profits[pop$mpa == F])) | year <= burn_year | all(prior_profits[pop$mpa == F] == 0))
+      {
+        pop$effort[pop$mpa == F] <-
+          effort * ((pop$numbers[pop$mpa == F] * pop$ssb_at_age[pop$mpa == F]) / sum((pop$numbers[pop$mpa == F] * pop$ssb_at_age[pop$mpa == F])))
+      } else {
+        pop$effort[pop$mpa == F] <-
+          effort * ((prior_profits[pop$mpa == F])^2 / sum((prior_profits[pop$mpa == F])^2, na.rm = T))
+
+      }
+    }
+
+    return(pop$effort)
+
 
   }
-  if (fleet$effort_allocation == 'gravity') {
-    pop$effort[pop$mpa == F] <-
-      effort * ((pop$numbers[pop$mpa == F] * pop$ssb_at_age[pop$mpa == F]) / sum((pop$numbers[pop$mpa == F] * pop$ssb_at_age[pop$mpa == F])))
-
-  }
-
-  return(pop$effort)
-
-
-}

@@ -6,3 +6,135 @@ output: html_notebook
 This repo is an updated version of the GASP module developed for Ovando et al. 2016 Fish and Fisheries. 
 
 Development is centered around support of 
+
+
+# Next ideas
+
+
+```{r}
+library(tidyverse)
+library(spasm)
+library(stringr)
+library(rfishbase)
+library(modelr)
+library(Rcpp)
+library(RcppEigen)
+
+# sourceCpp("scripts/eigen_mat_mult.cpp")
+
+fish <- create_fish(adult_movement = 1e-3,
+                    larval_movement = 1e-3,
+                    density_dependence_form = 1,
+                    price = 10,
+                    query_fishbase = F,
+                    linf = 100,
+                    age_mature = 2,
+                    vbk = .2,
+                    t0 = 0,
+                    max_age = 20,
+                    weight_a = 1e-3,
+                    weight_b = 3)
+
+fleet <-
+  create_fleet(
+    eq_f = .2,
+    length_50_sel = 50,
+    length_95_sel = 52,
+    fish = fish,
+    mpa_reaction = 'concentrate',
+    price = 1,
+    cost = 1000,
+    beta = 1.3,
+    theta = 1e-1,
+    q = 1e-3,
+    fleet_model = 'open-access',
+    effort_allocation = 'gravity',
+    initial_effort = 10,
+    target_catch = 1
+  )
+
+tester <-
+  spasm::sim_fishery(
+    fish = fish,
+    fleet = fleet,
+    manager  = create_manager(mpa_size = 0, year_mpa = 10),
+    num_patches = 2,
+    burn_year = 25,
+    sim_years = 35
+  )
+
+tester %>%
+  group_by(year) %>%
+  summarise(effort = sum(effort),
+            profits = sum(profits),
+            f = max(f),
+            catch = sum(biomass_caught),
+            total_ssb = sum(ssb)) %>%
+  ggplot(aes(year, total_ssb)) +
+  geom_point()
+
+
+```
+
+
+1. Make a "profit-gravity" model, where they distribute themselves by profits in each patch, allowing for heterogeneous costs in each patch
+
+
+```{r}
+fleet$effort_allocation <- 'profit-gravity'
+fleet$fleet_model <- 'constant-effort'
+tester <-
+  spasm::sim_fishery(
+    fish = fish,
+    fleet = fleet,
+    manager  = create_manager(mpa_size = 0, year_mpa = 10),
+    num_patches = 2,
+    burn_year = 25,
+    sim_years = 35
+  )
+
+tester %>% 
+  group_by(year, patch) %>% 
+  summarise(te = sum(effort, na.rm = T))
+
+```
+
+OK that works now. Now, add in ability to have cost vary by patch. 
+
+```{r}
+fleet$cost_slope <-  0.1
+
+fleet$cost_function <- 'distance from port'
+
+
+tester <-
+  spasm::sim_fishery(
+    fish = fish,
+    fleet = fleet,
+    manager  = create_manager(mpa_size = 0, year_mpa = 10),
+    num_patches = 2,
+    burn_year = 25,
+    sim_years = 35
+  )
+
+
+tester %>% 
+  group_by(year, patch) %>% 
+  summarise(te = sum(effort, na.rm = T))
+
+
+```
+
+
+
+2. Allow q to vary by time
+
+3. Allow habitat to vary
+
+4. Incorporate sampling of length structure into model 
+
+5. Add in recruitment variability and autocorrelation
+
+This is a scotch project at home
+
+

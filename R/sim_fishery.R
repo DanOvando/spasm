@@ -31,6 +31,7 @@ sim_fishery <-
 
     }
 
+
     pop <-
       expand.grid(
         year = 1:sim_years,
@@ -45,10 +46,22 @@ sim_fishery <-
         profits = NA,
         effort = 0,
         f = 0,
-        mpa = F
+        mpa = F,
+        cost = fleet$cost
       ) %>%
       as_data_frame() %>%
       arrange(year, patch, age)
+
+    if (fleet$cost_function == 'distance from port'){
+
+      cost_frame <- data_frame(patch = 1:num_patches) %>%
+        mutate(cost = fleet$cost * (1 + fleet$cost_slope * (patch - 1)))
+
+      pop <- pop %>%
+        select(-cost) %>%
+        left_join(cost_frame, by = 'patch')
+
+    }
 
     effort <- vector(mode = 'double', length = sim_years)
 
@@ -205,9 +218,13 @@ sim_fishery <-
 
       }
 
+
       pop[now_year, 'effort'] <-
         distribute_fleet(
           pop = pop %>% filter(year == y),
+          prior_profits = pop$profits[pop$year  == (y - 1)],
+          year = y,
+          burn_year = burn_year,
           effort = effort[y],
           fleet = fleet,
           num_patches = num_patches,
@@ -250,12 +267,13 @@ sim_fishery <-
         {
           .$numbers_caught
         }
+
       pop <- pop %>%
         mutate(
           ssb = numbers * ssb_at_age,
           biomass = numbers * weight_at_age,
           biomass_caught = numbers_caught * weight_at_age,
-          profits = biomass_caught * fish$price - fleet$cost * effort ^ fleet$beta
+          profits = biomass_caught * fish$price - cost * effort ^ fleet$beta
         )
 
       # Adjust fleet
