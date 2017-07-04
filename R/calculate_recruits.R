@@ -19,7 +19,8 @@ calculate_recruits <-
            num_patches,
            patch_habitat = 1,
            phase = 'burn',
-           move_matrix) {
+           move_matrix,
+           rec_devs = 0) {
     if (patch_habitat == 1) {
       patch_habitat <- rep(patch_habitat, num_patches)
 
@@ -115,6 +116,8 @@ calculate_recruits <-
 
 
     }
+
+    recruits <- recruits * exp(rec_devs)
 
     return(recruits)
 

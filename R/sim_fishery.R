@@ -69,6 +69,13 @@ sim_fishery <-
 
     q <- rep(fleet$q, sim_years)
 
+    rec_devs <- rnorm(sim_years, mean = -(fish$sigma_r ^ 2) / 2, sd = fish$sigma_r)
+    ## autocorrelated recruitment deviations
+    for (t in 2:length(rec_devs)) {
+      rec_devs[t] <-
+        rec_devs[t - 1] * fish$rec_ac + sqrt(1 - fish$rec_ac ^ 2) * rec_devs[t]
+    }
+
     mpa_locations <- -1
 
     n0_at_age <-
@@ -302,7 +309,8 @@ sim_fishery <-
           fish = fish,
           num_patches = num_patches,
           phase = model_phase,
-          move_matrix = larval_move_matrix
+          move_matrix = larval_move_matrix,
+          rec_devs = rec_devs[y + 1]
         )
 
 

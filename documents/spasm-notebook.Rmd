@@ -150,9 +150,39 @@ tester %>%
 ```
 
 
-4. Incorporate sampling of length structure into model 
+4. Add in recruitment variability and autocorrelation
 
-5. Add in recruitment variability and autocorrelation
+
+
+```{r}
+fish$sigma_r <- 0.75
+
+fish$rec_ac <- 0.5
+
+
+fleet$tech_rate <- 0.1
+
+tester <-
+  spasm::sim_fishery(
+    fish = fish,
+    fleet = fleet,
+    manager  = create_manager(mpa_size = 0, year_mpa = 10),
+    num_patches = 2,
+    burn_year = 25,
+    sim_years = 35
+  )
+
+tester %>% 
+  filter(age == 1) %>% 
+  group_by(year) %>% 
+  summarise(tn = sum(numbers, na.rm = T)) %>% 
+  ggplot(aes(year, tn)) + 
+  geom_point()
+
+```
+
+5. Incorporate sampling of length structure into model 
+
 
 This is a scotch project at home
 
