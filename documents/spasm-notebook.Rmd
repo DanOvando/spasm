@@ -1,0 +1,425 @@
+---
+title: "SpASM"
+output: html_notebook
+---
+
+This repo is an updated version of the GASP module developed for Ovando et al. 2016 Fish and Fisheries. 
+
+Development is centered around support of 
+
+
+# Next ideas
+
+
+```{r}
+
+# demons::load_functions('../R')
+# load("../data/lhi.rda")
+library(tidyverse)
+library(sparsm)
+library(stringr)
+library(rfishbase)
+library(modelr)
+library(Rcpp)
+library(RcppEigen)
+library(viridis)
+
+# sourceCpp("scripts/eigen_mat_mult.cpp")
+
+fish <- create_fish(adult_movement = 1e-3,
+                    larval_movement = 1e-3,
+                    density_dependence_form = 1,
+                    price = 10,
+                    query_fishbase = F,
+                    linf = 100,
+                    age_mature = 2,
+                    vbk = .2,
+                    t0 = 0,
+                    max_age = 20,
+                    weight_a = 1e-3,
+                    weight_b = 3)
+
+fleet <-
+  create_fleet(
+    eq_f = .2,
+    length_50_sel = 50,
+    length_95_sel = 52,
+    fish = fish,
+    mpa_reaction = 'concentrate',
+    price = 1,
+    cost = 1000,
+    beta = 1.3,
+    theta = 1e-1,
+    q = 1e-3,
+    fleet_model = 'open-access',
+    effort_allocation = 'gravity',
+    initial_effort = 10,
+    target_catch = 1
+  )
+
+```
+
+
+1. Make a "profit-gravity" model, where they distribute themselves by profits in each patch, allowing for heterogeneous costs in each patch
+
+
+```{r}
+fleet$effort_allocation <- 'profit-gravity'
+fleet$fleet_model <- 'constant-effort'
+tester <-
+  sim_fishery(
+    fish = fish,
+    fleet = fleet,
+    manager  = create_manager(mpa_size = 0, year_mpa = 10),
+    num_patches = 2,
+    burn_year = 25,
+    sim_years = 35
+  )
+
+tester %>% 
+  group_by(year, patch) %>% 
+  summarise(te = sum(effort, na.rm = T))
+
+```
+
+OK that works now. Now, add in ability to have cost vary by patch. 
+
+```{r}
+fleet$cost_slope <-  0.1
+
+fleet$cost_function <- 'distance from port'
+
+
+tester <-
+  sim_fishery(
+    fish = fish,
+    fleet = fleet,
+    manager  = create_manager(mpa_size = 0, year_mpa = 10),
+    num_patches = 2,
+    burn_year = 25,
+    sim_years = 35
+  )
+
+
+tester %>% 
+  group_by(year, patch) %>% 
+  summarise(te = sum(effort, na.rm = T))
+
+
+```
+
+2. Allow q to vary by time
+
+
+```{r}
+fleet$tech_rate <- 0.1
+
+tester <-
+  sim_fishery(
+    fish = fish,
+    fleet = fleet,
+    manager  = create_manager(mpa_size = 0, year_mpa = 10),
+    num_patches = 2,
+    burn_year = 25,
+    sim_years = 35
+  )
+
+tester %>% 
+  group_by(year) %>% 
+  summarise(tf = sum(f, na.rm = T))
+
+
+
+```
+
+
+4. Add in recruitment variability and autocorrelation
+
+
+
+```{r}
+
+fish$t0 <- -0.1
+
+fish$sigma_r <- 0
+
+fish$rec_ac <- 0
+
+fleet$tech_rate <- 0.1
+
+fleet$initial_effort <-  1000
+
+tester <-
+  sim_fishery(
+    fish = fish,
+    fleet = fleet,
+    manager  = create_manager(mpa_size = 0, year_mpa = 10),
+    num_patches = 2,
+    burn_year = 25,
+    sim_years = 35
+  )
+
+tester %>% 
+  filter(age == 1) %>% 
+  group_by(year) %>% 
+  summarise(tn = sum(numbers, na.rm = T)) %>% 
+  ggplot(aes(year, tn)) + 
+  geom_point()
+
+```
+
+5. Incorporate sampling of length structure into model 
+
+No need to do this in the model, you can sample from the numbers at age afterwords. 
+
+```{r}
+
+n_at_age <- tester %>% 
+  filter(year == max(year)) %>% 
+  select(patch,age, numbers, numbers_caught)
+
+length_samples <- sample_lengths(n_at_age = n_at_age,
+                                 cv = 0.1,
+                                 k = fish$vbk,
+                                 linf = fish$linf,
+                                 t0 = fish$t0,
+                                 sample_type = 'catch',
+                                 percent_sampled = 1)
+
+    length_samples %>%
+      ggplot(aes(length_bin, numbers)) +
+      geom_col()
+
+```
+
+And now, age those length samples. 
+
+
+```{r}
+
+age_samples <- length_to_age(length_samples = length_samples,
+                             cv = 0.1,
+                             k = fish$vbk,
+                             linf = fish$linf,
+                             t0 = fish$t0,
+                             max_age = max(tester$age) - 1)
+
+age_samples$numbers %>% sum()
+
+wtf <- tester %>% filter(year == max(year)) %>% select(age,patch,numbers_caught) %>%
+  group_by(age) %>% summarise(numbers = sum(numbers_caught)) %>% 
+mutate(age_type = 'true') 
+
+sum(wtf$numbers)
+
+age_samples %>% 
+  mutate(age_type = 'sampled') %>% 
+  bind_rows(wtf) %>% 
+  ggplot(aes(age,numbers, fill = age_type)) + 
+  geom_col(position = 'dodge')
+
+
+tester %>% 
+  ggplot(aes(age,1 - exp(-f))) + 
+  geom_col(aes(fill = factor(patch)), position = 'dodge') + 
+  facet_wrap(~year)
+  
+
+tester %>% 
+  select(year,age,numbers, numbers_caught, patch) %>% 
+  gather('number_type','number',numbers:numbers_caught) %>% 
+  group_by(year, age,number_type) %>% 
+  summarise(tn = sum(number, na.rm = T)) %>% 
+  ggplot(aes(age,tn, fill = number_type)) + 
+  geom_col(position = 'dodge') + 
+  facet_wrap(~year)
+
+tester %>% 
+  group_by(year,age) %>% 
+  summarise(numbers = sum(numbers)) %>% 
+  ggplot(aes(age,numbers)) + 
+  geom_col() + 
+  facet_wrap(~year)
+  
+
+tester %>% 
+  group_by(year,patch) %>% 
+  summarise(te = sum(effort)) %>% 
+  ggplot(aes(patch, te, color = year)) + 
+  geom_line()
+
+
+```
+
+Bring it all on home
+
+
+```{r}
+
+fleet$cost_slope <-  0.1
+
+fleet$cost_function <- 'distance from port'
+
+fish$t0 <- -0.1
+
+fish$sigma_r <- 0.75
+
+fish$rec_ac <- 0
+
+fleet$tech_rate <- 0.1
+
+fleet$initial_effort <-  1000
+
+fleet$effort_allocation <- 'profit-gravity'
+
+fleet$fleet_model <- 'open-access'
+
+fleet$price <-  100
+
+fleet$cost <- 10
+
+fleet$theta = 2e-3
+
+
+tester <-
+  sim_fishery(
+    fish = fish,
+    fleet = fleet,
+    manager  = create_manager(mpa_size = 0, year_mpa = 10),
+    num_patches = 10,
+    burn_year = 25,
+    sim_years = 35
+  )
+
+tester %>% 
+  group_by(year) %>% 
+  summarise(
+    tb = sum(ssb),
+    te = sum(effort),
+            tp = sum(profits)) %>% 
+              ggplot(aes(tb, te)) + 
+              geom_path()
+
+```
+
+
+```{r}
+tester %>% 
+  group_by(year, age) %>% 
+  summarise(tn = sum(numbers)) %>% 
+  ggplot(aes(age, tn, color = year)) + 
+  geom_line(position = 'dodge', alpha = 0.5, size = 1.5) + 
+  facet_grid(year ~ . , as.table = F) + 
+  theme_classic() + 
+  theme(axis.text.y = element_blank(),
+        panel.spacing = unit(0,'cm'),
+        strip.background = element_blank(),
+        strip.text = element_blank()) + 
+  scale_color_viridis()
+
+```
+
+
+```{r}
+tester %>% 
+  group_by(year,patch) %>% 
+  summarise(te = sum(effort)) %>% 
+  ggplot(aes(patch, te, color = factor(year))) + 
+  geom_line()
+```
+
+check length sampling
+```{r}
+
+n_at_age <- tester %>% 
+  filter(year == max(year)) %>% 
+  select(patch,age, numbers, numbers_caught)
+
+length_samples <- sample_lengths(n_at_age = n_at_age,
+                                 cv = 0.1,
+                                 k = fish$vbk,
+                                 linf = fish$linf,
+                                 t0 = fish$t0,
+                                 sample_type = 'catch',
+                                 percent_sampled = 1)
+
+    length_samples %>%
+      ggplot(aes(length_bin, numbers)) +
+      geom_col()
+
+```
+
+
+```{r}
+
+length_samples <- tester %>% 
+  select(year,patch,age, numbers, numbers_caught) %>% 
+  nest(-year) %>% 
+  mutate(length_samples = map(data, ~sample_lengths(n_at_age = .x,
+                                                   cv = 0.1,
+                                                    k = fish$vbk,
+                                 linf = fish$linf,
+                                 t0 = fish$t0,
+                                 sample_type = 'catch',
+                                 percent_sampled = 1))) %>% 
+  select(-data) %>% 
+  unnest()
+
+
+length_samples %>% 
+  ggplot(aes(length_bin, numbers, color = year)) + 
+  geom_line(position = 'dodge', alpha = 0.5, size = 1.5) + 
+  facet_grid(year ~ . , as.table = F) + 
+  theme_classic() + 
+  theme(axis.text.y = element_blank(),
+        panel.spacing = unit(0,'cm'),
+        strip.background = element_blank(),
+        strip.text = element_blank()) + 
+  scale_color_viridis()
+
+```
+
+check age sampling
+```{r}
+
+    age_samples <- length_to_age(length_samples = length_samples,
+                             cv = 0.1,
+                             k = fish$vbk,
+                             linf = fish$linf,
+                             t0 = fish$t0,
+                             max_age = max(tester$age) - 1)
+
+age_samples %>% 
+  mutate(age_type = 'sampled') %>% 
+  bind_rows(wtf) %>% 
+  ggplot(aes(age,numbers, fill = age_type)) + 
+  geom_col(position = 'dodge')
+
+
+tester %>% 
+  ggplot(aes(age,1 - exp(-f))) + 
+  geom_col(aes(fill = factor(patch)), position = 'dodge') + 
+  facet_wrap(~year)
+  
+
+tester %>% 
+  select(year,age,numbers, numbers_caught, patch) %>% 
+  gather('number_type','number',numbers:numbers_caught) %>% 
+  group_by(year, age,number_type) %>% 
+  summarise(tn = sum(number, na.rm = T)) %>% 
+  ggplot(aes(age,tn, fill = number_type)) + 
+  geom_col(position = 'dodge') + 
+  facet_wrap(~year)
+
+tester %>% 
+  group_by(year,age) %>% 
+  summarise(numbers = sum(numbers)) %>% 
+  ggplot(aes(age,numbers)) + 
+  geom_col() + 
+  facet_wrap(~year)
+  
+```
+
+This is a scotch project at home
+
+
