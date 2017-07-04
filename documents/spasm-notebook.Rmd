@@ -125,11 +125,30 @@ tester %>%
 
 ```
 
-
-
 2. Allow q to vary by time
 
-3. Allow habitat to vary
+
+```{r}
+fleet$tech_rate <- 0.1
+
+tester <-
+  spasm::sim_fishery(
+    fish = fish,
+    fleet = fleet,
+    manager  = create_manager(mpa_size = 0, year_mpa = 10),
+    num_patches = 2,
+    burn_year = 25,
+    sim_years = 35
+  )
+
+tester %>% 
+  group_by(year) %>% 
+  summarise(tf = sum(f, na.rm = T))
+
+
+
+```
+
 
 4. Incorporate sampling of length structure into model 
 

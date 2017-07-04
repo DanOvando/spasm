@@ -67,6 +67,8 @@ sim_fishery <-
 
     f <- vector(mode = 'double', length = sim_years)
 
+    q <- rep(fleet$q, sim_years)
+
     mpa_locations <- -1
 
     n0_at_age <-
@@ -231,8 +233,12 @@ sim_fishery <-
           mpa = mpa
         )
 
+      if (fleet$tech_rate > 0 & y > burn_year){
+        q[y] <- q[y - 1] + pmax(0,rnorm(1,fleet$tech_rate * q[y - 1], fleet$tech_rate*fleet$q))
+      }
+
       pop[now_year, 'f'] <-
-        pop[now_year, 'effort'] * fleet$q
+        pop[now_year, 'effort'] * q[y]
 
       # grow and die -----
 
