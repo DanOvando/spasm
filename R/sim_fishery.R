@@ -280,13 +280,16 @@ sim_fishery <-
         {
           .$numbers_caught
         }
-
+      # if (y > burn_year){ browser()}
       pop <- pop %>%
+        group_by(patch,year) %>%
+        mutate(patch_age_costs = (unique(cost) * unique(effort) ^ fleet$beta) / length(age)) %>% #divide costs up among each age class
+        ungroup() %>%
         mutate(
           ssb = numbers * ssb_at_age,
           biomass = numbers * weight_at_age,
           biomass_caught = numbers_caught * weight_at_age,
-          profits = biomass_caught * fish$price - cost * effort ^ fleet$beta
+          profits = biomass_caught * fish$price - patch_age_costs
         )
 
       # Adjust fleet

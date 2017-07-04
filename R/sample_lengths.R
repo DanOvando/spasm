@@ -1,13 +1,28 @@
+#' sample_lenghts
+#'
+#' @param n_at_age
+#' @param cv
+#' @param k
+#' @param linf
+#' @param t0
+#' @param sample_type
+#' @param percent_sampled
+#'
+#' @return a data frame of sampled length frequencies
+#' @export
+#'
 sample_lengths <-
-  function(n_at_age, cv, k, linf, t0,sample_type = 'catch',
+  function(n_at_age,
+           cv,
+           k,
+           linf,
+           t0,
+           sample_type = 'catch',
            percent_sampled = .1) {
-
-    if (sample_type == 'catch'){
-
+    if (sample_type == 'catch') {
       sample_col <- quo(numbers_caught)
 
-    } else if (sample_type == 'population'){
-
+    } else if (sample_type == 'population') {
       sample_col <- quo(numbers)
     }
 
@@ -37,7 +52,7 @@ sample_lengths <-
     # now calculate the probability of being in each length bin at each age
 
     p_length_at_age <-
-      expand.grid(age = 0:max_age, length_bin = 0:(1.5*linf)) %>%
+      expand.grid(age = 0:max_age, length_bin = 0:(1.5 * linf)) %>%
       as_data_frame() %>%
       left_join(length_at_age_vars, by = 'age') %>%
       arrange(age, length_bin)
@@ -45,14 +60,16 @@ sample_lengths <-
     p_length_at_age <- p_length_at_age %>%
       group_by(age) %>%
       mutate(next_length_bin = lead(length_bin, 1)) %>%
-      mutate(
-        p_bin = ifelse(is.na(next_length_bin) == F, pnorm(next_length_bin, mean_length_at_age, sigma_at_age), 1) -
-          pnorm(length_bin, mean_length_at_age, sigma_at_age)
-      )
+      mutate(p_bin = ifelse(
+        is.na(next_length_bin) == F,
+        pnorm(next_length_bin, mean_length_at_age, sigma_at_age),
+        1
+      ) -
+        pnorm(length_bin, mean_length_at_age, sigma_at_age))
 
     p_length_at_age %>%
       ggplot(aes(length_bin, p_bin, fill = factor(age))) +
-      geom_density(stat ='identity', alpha = 0.75)
+      geom_density(stat = 'identity', alpha = 0.75)
 
     p_length_at_age <- p_length_at_age %>%
       left_join(p_n_at_age, by = 'age')
@@ -65,10 +82,12 @@ sample_lengths <-
       ggplot(aes(length_bin, prob_sampled)) +
       geom_col()
 
-    length_comps <- rmultinom(1, size = length_comp_samples, prob = p_sampling_length_bin$prob_sampled) %>% as.numeric()
+    length_comps <-
+      rmultinom(1, size = length_comp_samples, prob = p_sampling_length_bin$prob_sampled) %>% as.numeric()
 
-    length_comps <- data_frame(length_bin = unique(p_length_at_age$length_bin),
-                               numbers = length_comps)
+    length_comps <-
+      data_frame(length_bin = unique(p_length_at_age$length_bin),
+                 numbers = length_comps)
 
     return(length_comps)
 

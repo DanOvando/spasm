@@ -9,6 +9,9 @@ move_foo(numbers, move_matrix)
 \arguments{
 \item{move_matrix}{}
 }
+\value{
+moved fish
+}
 \description{
 move function
 }

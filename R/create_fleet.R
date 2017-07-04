@@ -30,6 +30,8 @@ create_fleet <- function(eq_f = NA,
                          q = 1e-3,
                          fleet_model = 'constant-effort',
                          effort_allocation = 'gravity',
+                         cost_function = 'constant',
+                         tech_rate = 0,
                          initial_effort = 100,
                          target_catch = 0,
                          catches = NA,
@@ -61,6 +63,8 @@ create_fleet <- function(eq_f = NA,
     effort_allocation = effort_allocation,
     initial_effort = initial_effort,
     target_catch = target_catch,
-    catches = catches
+    catches = catches,
+    cost_function = cost_function,
+    tech_rate = tech_rate
   )
 }

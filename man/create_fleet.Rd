@@ -7,7 +7,8 @@
 create_fleet(eq_f = NA, length_50_sel = 1, length_95_sel = 2,
   mpa_reaction = "concentrate", price = 1, cost = 0.1, beta = 1.3,
   theta = 0.1, q = 0.001, fleet_model = "constant-effort",
-  effort_allocation = "gravity", initial_effort = 100, target_catch = 0,
+  effort_allocation = "gravity", cost_function = "constant",
+  tech_rate = 0, initial_effort = 100, target_catch = 0, catches = NA,
   fish)
 }
 \arguments{

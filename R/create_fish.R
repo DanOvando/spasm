@@ -53,7 +53,9 @@ create_fish <- function(common_name = 'white seabass',
                         query_fishbase = F,
                         lhi_type = 1,
                         lmat_to_linf_ratio = NA,
-                        price = 1) {
+                        price = 1,
+                        sigma_r = 0,
+                        rec_ac = 0) {
 
   lhi_groups <- lhi %>%
     group_by(type) %>%
@@ -231,6 +233,8 @@ create_fish <- function(common_name = 'white seabass',
   fish$length_units <-  length_units
   fish$weight_units <-  weight_units
   fish$price <- price
+  fish$sigma_r <- sigma_r
+  fish$rec_ac <- rec_ac
 
   return(fish)
 }
