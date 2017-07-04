@@ -155,12 +155,13 @@ tester %>%
 
 
 ```{r}
-fish$sigma_r <- 0.75
+fish$sigma_r <- 0.25
 
-fish$rec_ac <- 0.5
-
+fish$rec_ac <- 0
 
 fleet$tech_rate <- 0.1
+
+fleet$initial_effort <-  1000
 
 tester <-
   spasm::sim_fishery(
@@ -182,6 +183,43 @@ tester %>%
 ```
 
 5. Incorporate sampling of length structure into model 
+
+No need to do this in the model, you can sample from the numbers at age afterwords. 
+
+```{r}
+
+
+fleet$initial_effort <-  100000
+
+tester <-
+  spasm::sim_fishery(
+    fish = fish,
+    fleet = fleet,
+    manager  = create_manager(mpa_size = 0, year_mpa = 10),
+    num_patches = 2,
+    burn_year = 25,
+    sim_years = 35
+  )
+n_at_age <- tester %>% 
+  filter(year == max(year)) %>% 
+  select(patch,age, numbers, numbers_caught)
+
+length_samples <- sample_lengths(n_at_age = n_at_age,
+                                 cv = 0.1,
+                                 k = fish$vbk,
+                                 linf = fish$linf,
+                                 t0 = fish$t0,
+                                 sample_type = 'catch',
+                                 percent_sampled = 1)
+
+    length_samples %>%
+      ggplot(aes(length_bin, numbers)) +
+      geom_col()
+
+
+
+```
+
 
 
 This is a scotch project at home
