@@ -1,3 +1,16 @@
+#' sample_lenghts
+#'
+#' @param n_at_age
+#' @param cv
+#' @param k
+#' @param linf
+#' @param t0
+#' @param sample_type
+#' @param percent_sampled
+#'
+#' @return a data frame of sampled length frequencies
+#' @export
+#'
 sample_lengths <-
   function(n_at_age, cv, k, linf, t0,sample_type = 'catch',
            percent_sampled = .1) {

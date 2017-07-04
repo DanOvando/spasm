@@ -3,7 +3,7 @@
 #' @param numbers
 #' @param move_matrix
 #'
-#' @return
+#' @return moved fish
 #' @export
 #'
 move_foo <- function(numbers, move_matrix) {

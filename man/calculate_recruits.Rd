@@ -7,7 +7,7 @@ as a function of spawning stock biomass under
 various forms of density dependence}
 \usage{
 calculate_recruits(pop, fish, num_patches, patch_habitat = 1,
-  phase = "burn", move_matrix)
+  phase = "burn", move_matrix, rec_devs = 0)
 }
 \arguments{
 \item{phase}{}
