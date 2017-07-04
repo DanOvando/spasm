@@ -16,7 +16,7 @@ Development is centered around support of
 # demons::load_functions('../R')
 # load("../data/lhi.rda")
 library(tidyverse)
-library(sparsm)
+library(spasm)
 library(stringr)
 library(rfishbase)
 library(modelr)
@@ -272,7 +272,7 @@ fleet$initial_effort <-  1000
 
 fleet$effort_allocation <- 'profit-gravity'
 
-fleet$fleet_model <- 'open-access'
+fleet$fleet_model <- 'constant-effort'
 
 fleet$price <-  100
 
