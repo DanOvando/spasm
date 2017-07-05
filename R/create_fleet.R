@@ -2,7 +2,7 @@
 #'
 #' @param eq_f
 #' @param length_50_sel
-#' @param length_95_sel
+#' @param delta cm above length50 at 95 selectivity
 #' @param mpa_reaction
 #' @param fish
 #' @param price
@@ -18,10 +18,9 @@
 #' @export
 #'
 #' @examples create_fleet(eq_f = 2,length_50_sel = 25, length_95_sel = 27, fish = bluefish)
-#'
 create_fleet <- function(eq_f = NA,
                          length_50_sel = 1,
-                         length_95_sel = 2,
+                         delta = 2,
                          mpa_reaction = 'concentrate',
                          price = 1,
                          cost = .1,
@@ -38,6 +37,8 @@ create_fleet <- function(eq_f = NA,
                          fish) {
 
 
+  length_95_sel <- (length_50_sel + delta)
+
   age_50_sel <- (log(1 - length_50_sel / fish$linf) / -fish$vbk) + fish$t0
 
   age_95_sel <- (log(1 - length_95_sel / fish$linf) / -fish$vbk) + fish$t0
@@ -51,7 +52,7 @@ create_fleet <- function(eq_f = NA,
   fleet <- list(
     eq_f = eq_f,
     length_50_sel = length_50_sel,
-    length_95_sel = length_95_sel,
+    delta = 1,
     sel_at_age = sel_at_age,
     mpa_reaction = mpa_reaction,
     price = price,

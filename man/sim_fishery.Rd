@@ -5,11 +5,11 @@
 \title{\code{sim_fishery} simulates an age structured spatially explicit
 model forward with fleets etc.}
 \usage{
-sim_fishery(fish, fleet, manager, num_patches = 10, sim_years = 25,
+sim_fishery(fish, fleet, manager, num_patches = 10, sim_years = 1,
   burn_year = 10, crashed_pop = 0.001, ...)
 }
 \arguments{
-\item{...}{}
+\item{crashed_pop}{}
 }
 \value{
 a pop object with population and catch trajectories

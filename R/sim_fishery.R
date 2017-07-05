@@ -7,23 +7,25 @@
 #' @param num_patches
 #' @param sim_years
 #' @param ...
+#' @param burn_year
+#' @param crashed_pop
 #'
 #' @return a pop object with population and catch trajectories
 #' @export
 #'
 #' @examples sim_fishery(fish = fish, fleet = fleet,...)
 #'
-#' @useDynLib spasm
-#' @importFrom Rcpp sourceCpp
 sim_fishery <-
   function(fish,
            fleet,
            manager,
            num_patches = 10,
-           sim_years = 25,
+           sim_years = 1,
            burn_year = 10,
            crashed_pop = 1e-3,
            ...) {
+
+    sim_years <- burn_year + sim_years
 
     if (fleet$fleet_model == 'supplied-catch'){
 
@@ -282,9 +284,9 @@ sim_fishery <-
         }
       # if (y > burn_year){ browser()}
       pop <- pop %>%
-        group_by(patch,year) %>%
-        mutate(patch_age_costs = (unique(cost) * unique(effort) ^ fleet$beta) / length(age)) %>% #divide costs up among each age class
-        ungroup() %>%
+        # group_by(patch,year) %>%
+        mutate(patch_age_costs = ((cost) * (effort) ^ fleet$beta) / fish$max_age) %>% #divide costs up among each age class
+        # ungroup() %>%
         mutate(
           ssb = numbers * ssb_at_age,
           biomass = numbers * weight_at_age,

@@ -33,6 +33,7 @@ create_fish <- function(common_name = 'white seabass',
                         linf = NA,
                         vbk = NA,
                         t0 = 0,
+                        cv_len = 0.1,
                         length_units = 'cm',
                         max_age = 20,
                         weight_a = NA,
@@ -214,6 +215,7 @@ create_fish <- function(common_name = 'white seabass',
   fish$linf <- linf
   fish$vbk  <-  vbk
   fish$t0 <-  t0
+  fish$cv_len <- cv_len
   fish$max_age <-  max_age
   fish$weight_a <-  weight_a
   fish$weight_b <-  weight_b

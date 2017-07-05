@@ -67,20 +67,12 @@ sample_lengths <-
       ) -
         pnorm(length_bin, mean_length_at_age, sigma_at_age))
 
-    p_length_at_age %>%
-      ggplot(aes(length_bin, p_bin, fill = factor(age))) +
-      geom_density(stat = 'identity', alpha = 0.75)
-
     p_length_at_age <- p_length_at_age %>%
       left_join(p_n_at_age, by = 'age')
 
     p_sampling_length_bin <- p_length_at_age %>%
       group_by(length_bin) %>%
       summarise(prob_sampled = sum(p_bin * p_sampled_at_age))
-
-    p_sampling_length_bin %>%
-      ggplot(aes(length_bin, prob_sampled)) +
-      geom_col()
 
     length_comps <-
       rmultinom(1, size = length_comp_samples, prob = p_sampling_length_bin$prob_sampled) %>% as.numeric()

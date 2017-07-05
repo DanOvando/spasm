@@ -39,11 +39,12 @@ fish <- create_fish(adult_movement = 1e-3,
                     weight_a = 1e-3,
                     weight_b = 3)
 
+
 fleet <-
   create_fleet(
-    eq_f = .2,
+      eq_f = .2,
     length_50_sel = 50,
-    length_95_sel = 52,
+    delta = 2,
     fish = fish,
     mpa_reaction = 'concentrate',
     price = 1,
@@ -66,14 +67,15 @@ fleet <-
 ```{r}
 fleet$effort_allocation <- 'profit-gravity'
 fleet$fleet_model <- 'constant-effort'
+
 tester <-
   sim_fishery(
     fish = fish,
     fleet = fleet,
     manager  = create_manager(mpa_size = 0, year_mpa = 10),
-    num_patches = 2,
+    num_patches = 1,
     burn_year = 25,
-    sim_years = 35
+    sim_years = 50
   )
 
 tester %>% 
@@ -97,7 +99,7 @@ tester <-
     manager  = create_manager(mpa_size = 0, year_mpa = 10),
     num_patches = 2,
     burn_year = 25,
-    sim_years = 35
+    sim_years = 10
   )
 
 
@@ -121,7 +123,7 @@ tester <-
     manager  = create_manager(mpa_size = 0, year_mpa = 10),
     num_patches = 2,
     burn_year = 25,
-    sim_years = 35
+    sim_years = 10
   )
 
 tester %>% 
@@ -156,7 +158,7 @@ tester <-
     manager  = create_manager(mpa_size = 0, year_mpa = 10),
     num_patches = 2,
     burn_year = 25,
-    sim_years = 35
+    sim_years = 10
   )
 
 tester %>% 
@@ -288,7 +290,7 @@ tester <-
     manager  = create_manager(mpa_size = 0, year_mpa = 10),
     num_patches = 10,
     burn_year = 25,
-    sim_years = 35
+    sim_years = 10
   )
 
 tester %>% 
