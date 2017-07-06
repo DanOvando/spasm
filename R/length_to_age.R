@@ -68,10 +68,16 @@ length_to_age <-
     # Assign lengths to ages in proportion to the probability of age at length
 
     age_comp <- lengths_to_ages %>%
-      mutate(numbers = samples * p_age_at_length) %>%
+      nest(-length_bin) %>%
+      mutate(numbers = map(data,  ~ data_frame(
+        age = .x$age,
+        numbers = rmultinom(1, unique(.x$samples), .x$p_age_at_length) %>% as.numeric()
+      ))) %>%
+      select(numbers) %>%
+      unnest() %>%
       group_by(age) %>%
       summarise(numbers = sum(numbers, na.rm = T)) %>%
-      mutate(age = age + 1)
+      mutate(age = age)
 
     return(age_comp)
 

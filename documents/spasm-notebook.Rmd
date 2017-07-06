@@ -247,7 +247,7 @@ tester %>%
 tester %>% 
   group_by(year,patch) %>% 
   summarise(te = sum(effort)) %>% 
-  ggplot(aes(patch, te, color = year)) + 
+  ggplot(aes(patch, te, color = factor(year))) + 
   geom_line()
 
 
@@ -423,5 +423,140 @@ tester %>%
 ```
 
 This is a scotch project at home
+
+# What the hell is going on
+
+I can't convince myself that the hockey stick in mortality isn't a big somehow. So, how to debug this. 
+
+1. Create an artificial spike in the F rates and see if it propogates perfectly through the age structure 
+
+2. Write out a simple little loop population and test it that way
+
+3. Track the mortality it each cohort in the model itself and predict it. 
+
+4. Check for a normal bug again. 
+
+
+```{r}
+
+fish <- create_fish(adult_movement = 1e-3,
+                    larval_movement = 1e-3,
+                    density_dependence_form = 1,
+                    price = 10,
+                    query_fishbase = F,
+                    linf = 65,
+                    vbk = .2,
+                    t0 = -0.01,
+                    cv_len = 0.2,
+                    length_mature =  34,
+                    m = 0.2,
+                    max_age = floor(-log(0.01) / 0.2),
+                    weight_a = 0.0245,
+                    weight_b = 2.79, 
+                    sigma_r = 0,
+                    rec_ac = 0)
+
+fleet <-
+  create_fleet(
+    length_50_sel = 0.25*fish$linf,
+    delta = 1,
+    fish = fish,
+    mpa_reaction = 'concentrate',
+    price = 1,
+    cost = 1000,
+    beta = 1.3,
+    theta = 1e-1,
+    q = 1e-3,
+    fleet_model = 'constant-effort',
+    effort_allocation = 'simple',
+    initial_effort = 0,
+    target_catch = 0
+  )
+
+
+fish$rec_ac <- 0
+
+fish$sigma_r <- 0
+
+fish$cv_len <- 0
+
+fish$m <- 0.1
+
+fish$max_age <- 100
+
+fish <- update_fish(fish)
+
+fleet$length_50_sel <- 0* fish$linf
+
+fleet$initial_effort <- 200
+
+fleet <- update_fleet(fleet, fish)
+
+  cc_fishery <- sim_fishery(fish = fish, fleet = fleet,
+    manager  = create_manager(mpa_size = 0, year_mpa = 10),
+    num_patches = 1,
+    burn_year = 30,
+    sim_years = 70
+  )
+
+  
+  
+test_data <- cc_fishery %>% 
+  ungroup() %>% 
+  filter(year == max(year)) %>% 
+  group_by(age) %>% 
+  summarise(numbers = sum(numbers)) %>% 
+  mutate(log_numbers = log(numbers)) %>% 
+  ungroup()
+
+peak_age <- test_data$age[test_data$numbers == max(test_data$numbers)]
+
+cc <- lm(log_numbers ~ age, data = test_data)
+
+summary(cc)
+
+cc_fishery$f %>% unique() + fish$m
+
+test_data %>% 
+  ggplot(aes(age, log_numbers)) + 
+  geom_point()
+
+
+
+```
+```{r}
+
+
+n_mat <- matrix(NA, nrow = 20, ncol = 20)
+
+n_mat[,1] <-  100
+
+n_mat[1,] <-  100 * exp(-.1 * 0:19)
+
+ fs <-  c(rep(.1,10), rep(.8,10))
+ 
+ fs <- rlnorm(20, log(.2),2)
+
+for (t in 2:20){
+  
+  n_mat[t,2:20] <- n_mat[t - 1,1:19] * exp(-fs[t])
+  
+  }
+  
+wtf <- n_mat[20,] %>% log()
+
+data_frame(a = wtf, b = lead(wtf,1)) %>% 
+  mutate(survival = b - a,
+         fs = rev((-fs)))
+
+plot(wtf)
+
+
+
+```
+
+Well I'll be damned. The mortality rate 10 years ago is burned in the the survival of age 25 year old individuals (the slope from 25 to 26). Which I guess makes some sense. 25 years ago X% survived to age 26. 
+
+And duh, it doesn't work perfectly once you throw in a recruitment function since it's no longer a constant input, at least until it hits equilibirum. So, you're putting in less fish, which makes the survival rate actually a bit higher than you'd think, since there are proportionally more older fish than under constant recruitment
 
 
