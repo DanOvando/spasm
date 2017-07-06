@@ -194,6 +194,7 @@ length_samples <- sample_lengths(n_at_age = n_at_age,
 
 ```
 
+
 And now, age those length samples. 
 
 
@@ -559,4 +560,89 @@ Well I'll be damned. The mortality rate 10 years ago is burned in the the surviv
 
 And duh, it doesn't work perfectly once you throw in a recruitment function since it's no longer a constant input, at least until it hits equilibirum. So, you're putting in less fish, which makes the survival rate actually a bit higher than you'd think, since there are proportionally more older fish than under constant recruitment
 
+# Test assessment modules
+
+A catch curve
+
+```{r}
+
+
+fish <- create_fish(adult_movement = 1e-3,
+                    larval_movement = 1e-3,
+                    density_dependence_form = 1,
+                    price = 10,
+                    query_fishbase = F,
+                    linf = 65,
+                    vbk = .2,
+                    t0 = -0.01,
+                    cv_len = 0.2,
+                    length_mature =  34,
+                    m = 0.2,
+                    max_age = floor(-log(0.01) / 0.2),
+                    weight_a = 0.0245,
+                    weight_b = 2.79, 
+                    sigma_r = 0,
+                    rec_ac = 0)
+
+fleet <-
+  create_fleet(
+    length_50_sel = 0.25*fish$linf,
+    delta = 1,
+    fish = fish,
+    mpa_reaction = 'concentrate',
+    price = 1,
+    cost = 1000,
+    beta = 1.3,
+    theta = 1e-1,
+    q = 1e-3,
+    fleet_model = 'constant-effort',
+    effort_allocation = 'simple',
+    initial_effort = 0,
+    target_catch = 0
+  )
+
+
+fish$rec_ac <- 0
+
+fish$sigma_r <- 0
+
+fish$cv_len <- 0
+
+fish$m <- 0.4
+
+fish$max_age <- -log(0.01)/fish$m
+
+fish <- update_fish(fish)
+
+fleet$length_50_sel <- 0* fish$linf
+
+fleet$initial_effort <- 200
+
+fleet <- update_fleet(fleet, fish)
+
+  cc_fishery <- sim_fishery(fish = fish, fleet = fleet,
+    manager  = create_manager(mpa_size = 0, year_mpa = 10),
+    num_patches = 1,
+    burn_year = 30,
+    sim_years = 100
+  )
+
+
+n_at_age <- cc_fishery %>% 
+  filter(year == max(year)) %>% 
+  select(patch,age, numbers, numbers_caught)
+
+length_samples <- sample_lengths(n_at_age = n_at_age,
+                                 cv = fish$cv_len,
+                                 k = fish$vbk,
+                                 linf = fish$linf,
+                                 t0 = fish$t0,
+                                 sample_type = 'population',
+                                 percent_sampled = 1)
+
+z <- run_catch_curve(length_comps = length_samples, fish = fish)
+z
+mean(cc_fishery$f) + fish$m
+
+```
 
