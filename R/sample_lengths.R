@@ -30,12 +30,11 @@ sample_lengths <-
       summarise(samps = percent_sampled * (sum(!!sample_col))) %>%  {
         .$samps
       }
+    min_age <- min(n_at_age$age)
 
-    max_age <- max(n_at_age$age) - 1
+    max_age <- max(n_at_age$age)
 
-    mean_length_at_age <- linf * (1 - exp(-k * ((0:max_age) - t0)))
-
-    n_at_age$age <- n_at_age$age - 1
+    mean_length_at_age <- linf * (1 - exp(-k * (min_age:max_age) - t0))
 
     p_n_at_age <- n_at_age %>%
       group_by(age) %>%
@@ -44,15 +43,14 @@ sample_lengths <-
       mutate(p_sampled_at_age = numbers / sum(numbers))
 
     length_at_age_vars <- data_frame(
-      age = 0:max_age,
+      age = min_age:max_age,
       mean_length_at_age = mean_length_at_age,
       sigma_at_age = cv * mean_length_at_age
     ) #calculate standard deviation of length at age for each age bin
 
     # now calculate the probability of being in each length bin at each age
-
     p_length_at_age <-
-      expand.grid(age = 0:max_age, length_bin = 0:(1.5 * linf)) %>%
+      expand.grid(age = min_age:max_age, length_bin = 0:(1.5 * linf)) %>%
       as_data_frame() %>%
       left_join(length_at_age_vars, by = 'age') %>%
       arrange(age, length_bin)
@@ -73,7 +71,6 @@ sample_lengths <-
     p_sampling_length_bin <- p_length_at_age %>%
       group_by(length_bin) %>%
       summarise(prob_sampled = sum(p_bin * p_sampled_at_age))
-
     length_comps <-
       rmultinom(1, size = length_comp_samples, prob = p_sampling_length_bin$prob_sampled) %>% as.numeric()
 

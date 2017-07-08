@@ -10,7 +10,7 @@ create_fish(common_name = "white seabass",
   weight_b = NA, weight_units = "kg", length_50_mature = NA,
   length_95_mature = NA, age_50_mature = NA, age_95_mature = NA,
   age_mature = NA, length_mature = NA, m = 0.2, steepness = 0.8,
-  r0 = 1000, density_dependence_form = 1, adult_movement = 2,
+  r0 = 10000, density_dependence_form = 1, adult_movement = 2,
   larval_movement = 2, query_fishbase = F, lhi_type = 1,
   lmat_to_linf_ratio = NA, price = 1, sigma_r = 0, rec_ac = 0)
 }

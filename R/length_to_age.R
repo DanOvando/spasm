@@ -11,17 +11,16 @@
 #' @export
 #'
 length_to_age <-
-  function(length_samples, cv, k, linf, t0, max_age) {
+  function(length_samples, cv, k, linf, t0, max_age, min_age = 1) {
     lengths <- length_samples %>% {
       map2(.$length_bin, .$numbers, ~ rep(.x, .y))
     } %>%
       unlist()
 
-
-    mean_length_at_age <- linf * (1 - exp(-k * ((0:max_age) - t0)))
+    mean_length_at_age <- linf * (1 - exp(-k * ((min_age:max_age) - t0)))
 
     length_at_age_vars <- data_frame(
-      age = 0:max_age,
+      age = min_age:max_age,
       mean_length_at_age = mean_length_at_age,
       sigma_at_age = cv * mean_length_at_age
     ) #calculate standard deviation of length at age for each age bin
@@ -29,7 +28,7 @@ length_to_age <-
     # now calculate the probability of being in each length bin at each age
 
     p_length_at_age <-
-      expand.grid(age = 0:max_age, length_bin = 0:(1.5 * linf)) %>%
+      expand.grid(age = min_age:max_age, length_bin = 0:(1.5 * linf)) %>%
       as_data_frame() %>%
       left_join(length_at_age_vars, by = 'age') %>%
       arrange(age, length_bin)
