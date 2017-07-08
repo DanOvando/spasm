@@ -23,6 +23,7 @@ library(modelr)
 library(Rcpp)
 library(RcppEigen)
 library(viridis)
+library(LIME)
 
 # sourceCpp("scripts/eigen_mat_mult.cpp")
 
@@ -669,8 +670,6 @@ lcomps <- LIME::AgeToLengthComp(lh =lh, tyears = 1, N_at = a, comp_sample = 412,
 
 
 
-
-
 comp <- length_samples %>% 
   mutate(lime_numbers = lcomps$LF) %>% 
   gather('source','samples',-length_bin)
@@ -719,14 +718,14 @@ lbspr_fish@BinWidth <- 1
 
 lbspr_fish@L_units <- 'cm'
 
-lbspr_sim <- LBSPRsim(lbspr_fish, Control = list(modtype = 'absel'))
+lbspr_sim <- LBSPRsim(lbspr_fish, Control = list(modtype = 'absel', Nage = fish$max_age))
 
 plotSim(lbspr_sim)
  
 lbspr_lengths <- new("LB_lengths", LB_pars=lbspr_fish, dataType = 'freq')
 
 lbspr_lens <- length_samples %>%
-  mutate(Length = length_bin + 0.5,
+  mutate(Length = length_bin + 1,
          year = 2017) %>% 
   select(Length, numbers, year) %>% 
   spread(year, numbers) %>% 
@@ -740,17 +739,26 @@ lbspr_lens <- length_samples %>%
   
   lbspr_lengths@Years <- 2017
     
-  lbspr_fit <- LBSPRfit(lbspr_fish, lbspr_lengths,Control = list(modtype = 'absel', Nage = fish$max_age))
+  lbspr_fit <- LBSPRfit(lbspr_fish, lbspr_lengths,Control = list(modtype = 'absel', Nage = fish$max_age + 2))
 
 
-  plotSim(lbspr_fit)
 ```
 ```{r}
 plotSize(lbspr_fit)
 
+lbspr_fit@FM
+
 ```
 
-WHAT THE HELL IS HAPPENING HERE. Ok, one question is is your length sampling itself fucked. Let's try and use the LIME age to length function and see if those length samples look the same as yours. If it does, then it's either the difference in your population model or in your fishing model. 
+So close!!!
+
+Let's do one more check and see if you get the same unfished population
+
+
+
+```{r}
+
+```
 
 
 Check LIME against LBSPR
@@ -903,5 +911,37 @@ select(catch_length_samples) %>%
 ```
 
 
+```{r}
+
+lbspr_sim <- LBSPRsim(lbspr_fish, Control = list(modtype = 'absel', Nage = fish$max_age + 2))
+
+
+spasm_lengths <- check %>% 
+  filter(year == max(year)) %>% 
+  select(pop_length) %>% 
+  unnest() %>% 
+  mutate(source = 'spasm')
+
+lbspr_lengths <- lbspr_sim@pLPop %>% 
+  as_data_frame() %>% 
+  select(LMids, PopUF) %>% 
+  rename(length_bin = LMids,numbers = PopUF) %>% 
+  mutate(source = 'lbspr')
+
+comp_lengths <- spasm_lengths %>% 
+  bind_rows(lbspr_lengths) %>% 
+  group_by(source) %>% 
+  mutate(pnumbers = numbers / sum(numbers)) 
+
+comp_lengths %>% 
+  ggplot(aes(length_bin, pnumbers, fill = source)) + 
+  geom_point(shape = 21) + 
+  geom_vline(data = data_frame(lata = fish$length_at_age %>% floor()), aes(xintercept =lata))
+
+```
+
+AHA. Setting Nage to max_age + 2 seems to do the trick, probably to account for the fact that you don't have a zero, plus some other goofiness. 
+
+So the last question, why the hell aren't the distributions perfectly centered on the mean length_at_age values?, ah not a problem, just an artifact of Geom_col
 
 

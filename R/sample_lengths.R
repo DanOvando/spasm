@@ -71,9 +71,15 @@ sample_lengths <-
     p_sampling_length_bin <- p_length_at_age %>%
       group_by(length_bin) %>%
       summarise(prob_sampled = sum(p_bin * p_sampled_at_age))
+
     length_comps <-
       rmultinom(1, size = length_comp_samples, prob = p_sampling_length_bin$prob_sampled) %>% as.numeric()
 
+    # p_sampling_length_bin %>%
+    #   ggplot(aes(length_bin, prob_sampled)) +
+    #   geom_point() +
+    #   geom_vline(data = data_frame(lata = fish$length_at_age %>% floor()), aes(xintercept =lata))
+    #
     length_comps <-
       data_frame(length_bin = unique(p_length_at_age$length_bin),
                  numbers = length_comps)
