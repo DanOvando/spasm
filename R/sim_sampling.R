@@ -62,7 +62,8 @@ sim_sampling <- function(fish, fleet, sim_years = 25, burn_year = 25,percent_sam
                                                                          min_age = fish$min_age)))
 
   length_and_age_comps <- length_and_age_comps %>%
-    mutate(n0_at_age = list(n_at_age[[1]]))
+    mutate(n0_at_age = list(n_at_age[[1]])) %>%
+    mutate(fishery = list(fishery))
 
   return(length_and_age_comps)
 

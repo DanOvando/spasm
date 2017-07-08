@@ -42,6 +42,7 @@ create_fish <- function(common_name = 'white seabass',
                         weight_units = 'kg',
                         length_50_mature = NA,
                         length_95_mature = NA,
+                        delta_mature = .1,
                         age_50_mature = NA,
                         age_95_mature = NA,
                         age_mature = NA,
@@ -209,6 +210,14 @@ create_fish <- function(common_name = 'white seabass',
       19
     ) * (((min_age:max_age) - age_50_mature) / (age_95_mature - age_50_mature)
     )))))
+
+  if (is.na(length_50_mature)){
+
+    length_50_mature <- length_mature
+
+    length_95_mature <- length_50_mature + delta_mature
+
+  }
 
   fish$scientific_name <- scientific_name
   fish$common_name <- common_name

@@ -35,7 +35,7 @@ fit_lbspr <- function(fish, fleet, length_comps)
 
   lbspr_fish@SL95 <- fleet$length_50_sel + fleet$delta
 
-  lbspr_fish@FM <- f_v_m
+  # lbspr_fish@FM <- f_v_m
 
   lbspr_fish@BinWidth <- 1
 
@@ -66,5 +66,6 @@ fit_lbspr <- function(fish, fleet, length_comps)
   lbspr_fit <- LBSPRfit(lbspr_fish, lbspr_lengths,Control = list(modtype = 'absel', Nage = fish$max_age + 2))
 
   out <- lbspr_fit@Ests
+
 
 }

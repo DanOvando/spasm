@@ -43,10 +43,14 @@ length_to_age <-
       ) -
         pnorm(length_bin, mean_length_at_age, sigma_at_age))
 
+    p_length_at_age$p_bin
+
     #rescale probabilities by the probability of being in an age bin at a given length``
     p_length_at_age <- p_length_at_age %>%
       group_by(length_bin) %>%
       mutate(p_age_at_length = p_bin / sum(p_bin, na.rm = T))
+
+    p_length_at_age$p_age_at_length[is.na(p_length_at_age$p_age_at_length)] <-  0
 
     # p_length_at_age %>%
     #   ggplot(aes(age, p_age_at_length)) +
@@ -70,7 +74,8 @@ length_to_age <-
       nest(-length_bin) %>%
       mutate(numbers = map(data,  ~ data_frame(
         age = .x$age,
-        numbers = rmultinom(1, unique(.x$samples), .x$p_age_at_length) %>% as.numeric()
+        numbers = (.x$samples * .x$p_age_at_length) %>% as.numeric()
+        # numbers = rmultinom(1, unique(.x$samples), .x$p_age_at_length) %>% as.numeric()
       ))) %>%
       select(numbers) %>%
       unnest() %>%

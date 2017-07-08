@@ -17,6 +17,7 @@ run_catch_curve <- function(length_comps, fish) {
                                  max_age = fish$max_age,
                               min_age = fish$min_age)
 
+
   cc_dat <- age_comps %>%
     ungroup() %>%
     mutate(log_numbers = log(pmax(1e-3,numbers)))
