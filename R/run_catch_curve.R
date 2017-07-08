@@ -14,7 +14,8 @@ run_catch_curve <- function(length_comps, fish) {
                                  k = fish$vbk,
                                  linf = fish$linf,
                                  t0 = fish$t0,
-                                 max_age = fish$max_age)
+                                 max_age = fish$max_age,
+                              min_age = fish$min_age)
 
   cc_dat <- age_comps %>%
     ungroup() %>%

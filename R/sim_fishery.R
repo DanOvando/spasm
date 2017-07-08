@@ -38,7 +38,7 @@ sim_fishery <-
       expand.grid(
         year = 1:sim_years,
         patch = 1:num_patches,
-        age = 1:fish$max_age
+        age = fish$min_age:fish$max_age
       ) %>%
       mutate(
         numbers = NA,
@@ -81,7 +81,7 @@ sim_fishery <-
     mpa_locations <- -1
 
     n0_at_age <-
-      fish$r0 / num_patches * exp(-fish$m * (0:(fish$max_age - 1)))
+      fish$r0 / num_patches * exp(-fish$m * (fish$min_age:fish$max_age))
 
     n0_at_age[fish$max_age] <-
       n0_at_age[fish$max_age]  / (1 - exp(-fish$m))
@@ -95,7 +95,7 @@ sim_fishery <-
     pop <- pop %>%
       left_join(
         data_frame(
-          age = 1:fish$max_age,
+          age = fish$min_age:fish$max_age,
           ssb_at_age = fish$ssb_at_age,
           weight_at_age = fish$weight_at_age
         ),
@@ -152,9 +152,9 @@ sim_fishery <-
       now_year <- pop$year == y
 
       pop[now_year &
-            pop$age > 1,] <-
+            pop$age > fish$min_age,] <-
         move_fish(
-          pop %>% filter(year == y, age > 1),
+          pop %>% filter(year == y, age > fish$min_age),
           fish = fish,
           num_patches = num_patches,
           move_matrix = adult_move_matrix
@@ -308,7 +308,7 @@ sim_fishery <-
       # spawn ----
 
       pop$numbers[pop$year == (y + 1) &
-                    pop$age == 1] <-
+                    pop$age == fish$min_age] <-
         calculate_recruits(
           pop = pop[pop$year == (y + 1), ],
           fish = fish,

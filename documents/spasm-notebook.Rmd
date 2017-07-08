@@ -637,7 +637,7 @@ length_samples <- sample_lengths(n_at_age = n_at_age,
                                  k = fish$vbk,
                                  linf = fish$linf,
                                  t0 = fish$t0,
-                                 sample_type = 'population',
+                                 sample_type = 'catch',
                                  percent_sampled = 1)
 
 z <- run_catch_curve(length_comps = length_samples, fish = fish)
@@ -649,43 +649,11 @@ f_v_m <- mean(cc_fishery$f) / fish$m
 f_v_m
 ```
 
-```{r}
-
-a <- n_at_age %>% 
-  group_by(age) %>% 
-  summarise(nc = sum(numbers_caught)) %>% 
-  select(-age) %>% 
-  as.matrix()
-
-lh <- LIME::create_lh_list(linf = fish$linf,
-                           vbk = fish$vbk,
-                           lwa = fish$weight_a,
-                           lwb = fish$weight_b,
-                           M50 = fish$length_50_mature,
-                           M95 = fish$length_95_mature,
-                           S50 = fleet$length_50_sel,
-                           AgeMax = fish$max_age - 1)
-
-lcomps <- LIME::AgeToLengthComp(lh =lh, tyears = 1, N_at = a, comp_sample = 412, sample_type = 1)
-
-
-
-comp <- length_samples %>% 
-  mutate(lime_numbers = lcomps$LF) %>% 
-  gather('source','samples',-length_bin)
-
-comp %>% 
-  ggplot(aes(length_bin, samples, fill = source)) + 
-  geom_area(position = 'dodge', alpha = 0.5)
-
-```
-
 OK so it's not that, the length resampling works 
 
 LBSPR
 
 ```{r}
-library(LBSPR)
 lbspr_fish <-  new("LB_pars")
 
 lbspr_fish@Species <- 'WTF'
@@ -725,7 +693,7 @@ plotSim(lbspr_sim)
 lbspr_lengths <- new("LB_lengths", LB_pars=lbspr_fish, dataType = 'freq')
 
 lbspr_lens <- length_samples %>%
-  mutate(Length = length_bin + 1,
+  mutate(Length = length_bin + 0.5,
          year = 2017) %>% 
   select(Length, numbers, year) %>% 
   spread(year, numbers) %>% 
@@ -746,6 +714,8 @@ lbspr_lens <- length_samples %>%
 ```{r}
 plotSize(lbspr_fit)
 
+lbspr_fit@SL95
+
 lbspr_fit@FM
 
 ```
@@ -756,9 +726,6 @@ Let's do one more check and see if you get the same unfished population
 
 
 
-```{r}
-
-```
 
 
 Check LIME against LBSPR
@@ -943,5 +910,4 @@ comp_lengths %>%
 AHA. Setting Nage to max_age + 2 seems to do the trick, probably to account for the fact that you don't have a zero, plus some other goofiness. 
 
 So the last question, why the hell aren't the distributions perfectly centered on the mean length_at_age values?, ah not a problem, just an artifact of Geom_col
-
 

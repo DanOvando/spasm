@@ -8,7 +8,7 @@
 #' @param patch_habitat
 #' @param phase
 #'
-#' @return recruits of age 1 in each patch
+#' @return recruits of age min_age in each patch
 #' @export
 #'
 #' @examples calculate_recruits(pop, fish, num_patches = 10, phase = 'grow')

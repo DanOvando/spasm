@@ -6,13 +6,14 @@
 \usage{
 create_fish(common_name = "white seabass",
   scientific_name = "Atractoscion nobilis", linf = NA, vbk = NA, t0 = 0,
-  cv_len = 0.1, length_units = "cm", max_age = 20, weight_a = NA,
-  weight_b = NA, weight_units = "kg", length_50_mature = NA,
-  length_95_mature = NA, age_50_mature = NA, age_95_mature = NA,
-  age_mature = NA, length_mature = NA, m = 0.2, steepness = 0.8,
-  r0 = 10000, density_dependence_form = 1, adult_movement = 2,
-  larval_movement = 2, query_fishbase = F, lhi_type = 1,
-  lmat_to_linf_ratio = NA, price = 1, sigma_r = 0, rec_ac = 0)
+  cv_len = 0.1, length_units = "cm", min_age = 0, max_age = 20,
+  weight_a = NA, weight_b = NA, weight_units = "kg",
+  length_50_mature = NA, length_95_mature = NA, age_50_mature = NA,
+  age_95_mature = NA, age_mature = NA, length_mature = NA, m = 0.2,
+  steepness = 0.8, r0 = 10000, density_dependence_form = 1,
+  adult_movement = 2, larval_movement = 2, query_fishbase = F,
+  lhi_type = 1, lmat_to_linf_ratio = NA, price = 1, sigma_r = 0,
+  rec_ac = 0)
 }
 \arguments{
 \item{r0}{}

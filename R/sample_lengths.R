@@ -30,11 +30,12 @@ sample_lengths <-
       summarise(samps = percent_sampled * (sum(!!sample_col))) %>%  {
         .$samps
       }
+
     min_age <- min(n_at_age$age)
 
     max_age <- max(n_at_age$age)
 
-    mean_length_at_age <- linf * (1 - exp(-k * (min_age:max_age) - t0))
+    mean_length_at_age <- linf * (1 - exp(-k * ((min_age:max_age) - t0)))
 
     p_n_at_age <- n_at_age %>%
       group_by(age) %>%
@@ -79,11 +80,9 @@ sample_lengths <-
     #   ggplot(aes(length_bin, prob_sampled)) +
     #   geom_point() +
     #   geom_vline(data = data_frame(lata = fish$length_at_age %>% floor()), aes(xintercept =lata))
-    #
     length_comps <-
       data_frame(length_bin = unique(p_length_at_age$length_bin),
                  numbers = length_comps)
-
     return(length_comps)
 
   }

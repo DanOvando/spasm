@@ -11,7 +11,7 @@
 #' @export
 #'
 length_to_age <-
-  function(length_samples, cv, k, linf, t0, max_age, min_age = 1) {
+  function(length_samples, cv, k, linf, t0, max_age, min_age = 0) {
     lengths <- length_samples %>% {
       map2(.$length_bin, .$numbers, ~ rep(.x, .y))
     } %>%
@@ -77,7 +77,6 @@ length_to_age <-
       group_by(age) %>%
       summarise(numbers = sum(numbers, na.rm = T)) %>%
       mutate(age = age)
-
     return(age_comp)
 
   }

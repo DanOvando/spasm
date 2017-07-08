@@ -17,11 +17,13 @@ grow_and_die <- function(numbers, f, mpa, fish, fleet) {
 
   death <-  1 - survival
 
-  survivors[2:fish$max_age] <-
-    numbers[1:(fish$max_age - 1)] * survival[1:(fish$max_age - 1)]
+  max_index <- length(survivors)
 
-  survivors[fish$max_age] <-
-    survivors[fish$max_age] + numbers[fish$max_age] * survival[fish$max_age]
+  survivors[2:max_index] <-
+    numbers[1:(max_index - 1)] * survival[1:(max_index - 1)]
+
+  survivors[max_index] <-
+    survivors[max_index] + numbers[max_index] * survival[max_index]
 
   caught <-
     (f * fleet$sel_at_age) / (fish$m + (f * fleet$sel_at_age)) *  (numbers * death)

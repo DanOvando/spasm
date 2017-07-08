@@ -13,7 +13,7 @@ calculate_recruits(pop, fish, num_patches, patch_habitat = 1,
 \item{phase}{}
 }
 \value{
-recruits of age 1 in each patch
+recruits of age min_age in each patch
 }
 \description{
 \code{calcualte_recruits} calculates recruits

@@ -4,7 +4,7 @@
 \alias{length_to_age}
 \title{length_to_age}
 \usage{
-length_to_age(length_samples, cv, k, linf, t0, max_age)
+length_to_age(length_samples, cv, k, linf, t0, max_age, min_age = 0)
 }
 \arguments{
 \item{max_age}{}
