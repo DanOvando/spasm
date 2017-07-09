@@ -11,16 +11,24 @@
 #' @export
 #'
 length_to_age <-
-  function(length_samples, cv, k, linf, t0, max_age, min_age = 0) {
+  function(length_samples,
+           cv,
+           k,
+           linf,
+           t0,
+           max_age,
+           min_age = 0,
+           time_step = 1) {
     lengths <- length_samples %>% {
       map2(.$length_bin, .$numbers, ~ rep(.x, .y))
     } %>%
       unlist()
 
-    mean_length_at_age <- linf * (1 - exp(-k * ((min_age:max_age) - t0)))
+    mean_length_at_age <-
+      linf * (1 - exp(-k * (seq(min_age, max_age, by = time_step) - t0)))
 
     length_at_age_vars <- data_frame(
-      age = min_age:max_age,
+      age =  seq(min_age, max_age, by = time_step),
       mean_length_at_age = mean_length_at_age,
       sigma_at_age = cv * mean_length_at_age
     ) #calculate standard deviation of length at age for each age bin
@@ -28,7 +36,7 @@ length_to_age <-
     # now calculate the probability of being in each length bin at each age
 
     p_length_at_age <-
-      expand.grid(age = min_age:max_age, length_bin = 0:(1.5 * linf)) %>%
+      expand.grid(age =  seq(min_age, max_age, by = time_step), length_bin = 0:(1.5 * linf)) %>%
       as_data_frame() %>%
       left_join(length_at_age_vars, by = 'age') %>%
       arrange(age, length_bin)
@@ -50,7 +58,8 @@ length_to_age <-
       group_by(length_bin) %>%
       mutate(p_age_at_length = p_bin / sum(p_bin, na.rm = T))
 
-    p_length_at_age$p_age_at_length[is.na(p_length_at_age$p_age_at_length)] <-  0
+    p_length_at_age$p_age_at_length[is.na(p_length_at_age$p_age_at_length)] <-
+      0
 
     # p_length_at_age %>%
     #   ggplot(aes(age, p_age_at_length)) +
@@ -82,6 +91,7 @@ length_to_age <-
       group_by(age) %>%
       summarise(numbers = sum(numbers, na.rm = T)) %>%
       mutate(age = age)
+
     return(age_comp)
 
   }

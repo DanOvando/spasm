@@ -31,7 +31,8 @@ sim_sampling <- function(fish, fleet, sim_years = 25, burn_year = 25,percent_sam
                                                       linf = fish$linf,
                                                       t0 = fish$t0,
                                                       sample_type = 'population',
-                                                      percent_sampled = 1)))
+                                                      percent_sampled = 1,
+                                                      time_step = fish$time_step)))
 
   length_and_age_comps <- length_and_age_comps %>%
     mutate(pop_ages = map(pop_length, ~length_to_age(length_samples = .x,
@@ -40,7 +41,8 @@ sim_sampling <- function(fish, fleet, sim_years = 25, burn_year = 25,percent_sam
                                                      linf = fish$linf,
                                                      t0 = fish$t0,
                                                      max_age = fish$max_age,
-                                                     min_age = fish$min_age)))
+                                                     min_age = fish$min_age,
+                                                     time_step = fish$time_step)))
 
 
   length_and_age_comps <- length_and_age_comps %>%
@@ -50,6 +52,7 @@ sim_sampling <- function(fish, fleet, sim_years = 25, burn_year = 25,percent_sam
                                                                 linf = fish$linf,
                                                                 t0 = fish$t0,
                                                                 sample_type = 'catch',
+                                                                time_step = fish$time_step,
                                                                 percent_sampled = percent_sampled)))
 
   length_and_age_comps <- length_and_age_comps %>%
@@ -59,7 +62,8 @@ sim_sampling <- function(fish, fleet, sim_years = 25, burn_year = 25,percent_sam
                                                                          linf = fish$linf,
                                                                          t0 = fish$t0,
                                                                          max_age = fish$max_age,
-                                                                         min_age = fish$min_age)))
+                                                                         min_age = fish$min_age,
+                                                                         time_step = fish$time_step)))
 
   length_and_age_comps <- length_and_age_comps %>%
     mutate(n0_at_age = list(n_at_age[[1]])) %>%

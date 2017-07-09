@@ -46,7 +46,7 @@ create_fleet <- function(eq_f = NA,
   sel_at_age <-
   ((1 / (1 + exp(-log(
     19
-  ) * (((fish$min_age:fish$max_age) - age_50_sel) / (age_95_sel - age_50_sel)
+  ) * ((seq(fish$min_age,fish$max_age, by = fish$time_step) - age_50_sel) / (age_95_sel - age_50_sel)
   )))))
 
   fleet <- list(

@@ -37,6 +37,7 @@ create_fish <- function(common_name = 'white seabass',
                         length_units = 'cm',
                         min_age = 0,
                         max_age = 20,
+                        time_step = 1,
                         weight_a = NA,
                         weight_b = NA,
                         weight_units = 'kg',
@@ -174,7 +175,7 @@ create_fish <- function(common_name = 'white seabass',
 
   }
 
-  fish$length_at_age <- linf * (1 - exp(-vbk * ((min_age:max_age) - t0)))
+  fish$length_at_age <- linf * (1 - exp(-vbk * (seq(min_age,max_age, by = time_step) - t0)))
 
   # process weight
 
@@ -208,7 +209,7 @@ create_fish <- function(common_name = 'white seabass',
   fish$maturity_at_age <-
     ((1 / (1 + exp(-log(
       19
-    ) * (((min_age:max_age) - age_50_mature) / (age_95_mature - age_50_mature)
+    ) * ((seq(min_age,max_age, by = time_step) - age_50_mature) / (age_95_mature - age_50_mature)
     )))))
 
   if (is.na(length_50_mature)){
@@ -248,6 +249,7 @@ create_fish <- function(common_name = 'white seabass',
   fish$price <- price
   fish$sigma_r <- sigma_r
   fish$rec_ac <- rec_ac
+  fish$time_step <- time_step
 
   return(fish)
 }

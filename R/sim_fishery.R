@@ -38,7 +38,7 @@ sim_fishery <-
       expand.grid(
         year = 1:sim_years,
         patch = 1:num_patches,
-        age = fish$min_age:fish$max_age
+        age = seq(fish$min_age, fish$max_age, fish$time_step)
       ) %>%
       mutate(
         numbers = NA,
@@ -81,7 +81,7 @@ sim_fishery <-
     mpa_locations <- -1
 
     n0_at_age <-
-      fish$r0 / num_patches * exp(-fish$m * (fish$min_age:fish$max_age))
+      fish$r0 / num_patches * exp(-fish$m *  seq(fish$min_age, fish$max_age, fish$time_step))
 
     n0_at_age[fish$max_age] <-
       n0_at_age[fish$max_age]  / (1 - exp(-fish$m))
@@ -95,7 +95,7 @@ sim_fishery <-
     pop <- pop %>%
       left_join(
         data_frame(
-          age = fish$min_age:fish$max_age,
+          age =  seq(fish$min_age, fish$max_age, fish$time_step),
           ssb_at_age = fish$ssb_at_age,
           weight_at_age = fish$weight_at_age
         ),

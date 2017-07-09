@@ -577,11 +577,13 @@ fish <- create_fish(adult_movement = 1e-3,
                     linf = 65,
                     vbk = .2,
                     t0 = -0.01,
-                    cv_len = 0.1,
+                    cv_len = 0,
                     length_50_mature  =  37,
                     length_95_mature = 38,
                     m = 0.43,
-                    max_age = floor(-log(0.01) / 0.2),
+                    min_age = 0,
+                    max_age = floor(-log(0.01) / fish$m),
+                    time_step = 0.25,
                     weight_a = 0.0245,
                     weight_b = 2.79, 
                     sigma_r = 0,
@@ -609,15 +611,15 @@ fish$rec_ac <- 0
 
 fish$sigma_r <- 0
 
-fish$cv_len <- 0.1
+fish$cv_len <- 0
 
-fish$max_age <- (-log(0.01)/fish$m) %>% floor()
+fish$max_age <- ((-log(0.01)/fish$m)/fish$time_step) %>% floor()
 
 fish <- update_fish(fish)
 
 fleet$length_50_sel <- 0.5* fish$linf
 
-fleet$initial_effort <- 200
+fleet$initial_effort <- 100
 
 fleet <- update_fleet(fleet, fish)
 
@@ -638,8 +640,9 @@ length_samples <- sample_lengths(n_at_age = n_at_age,
                                  k = fish$vbk,
                                  linf = fish$linf,
                                  t0 = fish$t0,
-                                 sample_type = 'catch',
-                                 percent_sampled = 1) %>% 
+                                 sample_type = 'population',
+                                 percent_sampled = 1,
+                                 time_step = fish$time_step) %>% 
   mutate(year = 1)
 
 z <- run_catch_curve(length_comps = length_samples, fish = fish)
@@ -915,4 +918,56 @@ comp_lengths %>%
 AHA. Setting Nage to max_age + 2 seems to do the trick, probably to account for the fact that you don't have a zero, plus some other goofiness. 
 
 So the last question, why the hell aren't the distributions perfectly centered on the mean length_at_age values?, ah not a problem, just an artifact of Geom_col
+
+# Move to flexible time
+
+```{r}
+fish <- create_fish(adult_movement = 1e-3,
+                    larval_movement = 1e-3,
+                    density_dependence_form = 1,
+                    price = 10,
+                    query_fishbase = F,
+                    linf = 100,
+                    age_mature = 2,
+                    vbk = .2,
+                    t0 = -0.01,
+                    min_age = 0,
+                    max_age = 20,
+                    time_step = 1,
+                    weight_a = 1e-3,
+                    weight_b = 3)
+
+
+fleet <-
+  create_fleet(
+      eq_f = .2,
+    length_50_sel = 50,
+    delta = 2,
+    fish = fish,
+    mpa_reaction = 'concentrate',
+    price = 1,
+    cost = 1000,
+    beta = 1.3,
+    theta = 1e-1,
+    q = 1e-3,
+    fleet_model = 'open-access',
+    effort_allocation = 'gravity',
+    initial_effort = 10,
+    target_catch = 1
+  )
+
+fleet$effort_allocation <- 'profit-gravity'
+fleet$fleet_model <- 'constant-effort'
+
+tester <-
+  sim_fishery(
+    fish = fish,
+    fleet = fleet,
+    manager  = create_manager(mpa_size = 0, year_mpa = 10),
+    num_patches = 1,
+    burn_year = 25,
+    sim_years = 50
+  )
+
+```
 
