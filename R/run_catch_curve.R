@@ -30,7 +30,7 @@ run_catch_curve <- function(length_comps, fish) {
   # if(is.na(first_zero)){first_zero <-  max(cc_dat$age) + 1}
 
   cc_dat <- cc_dat %>%
-    filter(age >= peak_age)
+    filter(age >= peak_age, age < max(age))
 
   cc <- lm(log_numbers ~ age, data = cc_dat)
 
@@ -43,10 +43,9 @@ run_catch_curve <- function(length_comps, fish) {
   ln_hat <- (ln_hat - min(ln_hat)) / sum(ln_hat - min(ln_hat))
 
   cc_weights[pos_ages] <- ln_hat
-
   cc <- lm(log_numbers ~ age, data = cc_dat, weights = cc_weights)
 
-  z <- (cc$coefficients['age'] %>% as.numeric()) * fish$time_step
+  z <- (cc$coefficients['age'] %>% as.numeric())
 
   return(z)
 

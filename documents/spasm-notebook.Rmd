@@ -621,13 +621,13 @@ fish$rec_ac <- 0
 
 fish$sigma_r <- 0
 
-fish$cv_len <- 0
+fish$cv_len <- 0.1
 
 fish$max_age <- ((-log(0.01)/fish$m)/fish$time_step) %>% floor()
 
 fish <- update_fish(fish)
 
-fleet$length_50_sel <- 0* fish$linf
+fleet$length_50_sel <- 0.5* fish$linf
 
 fleet$initial_effort <- 50
 
@@ -650,7 +650,7 @@ length_samples <- sample_lengths(n_at_age = n_at_age,
                                  k = fish$vbk,
                                  linf = fish$linf,
                                  t0 = fish$t0,
-                                 sample_type = 'population',
+                                 sample_type = 'catch',
                                  percent_sampled = 1,
                                  time_step = fish$time_step) %>% 
   mutate(year = 1)
@@ -694,13 +694,13 @@ lbspr_fish@SL50 <- fleet$length_50_sel
 
 lbspr_fish@SL95 <- fleet$length_50_sel + fleet$delta
 
-lbspr_fish@FM <- f_v_m
+lbspr_fish@FM <- mean(cc_fishery$f) / fish$m
 
 lbspr_fish@BinWidth <- 1
 
 lbspr_fish@L_units <- 'cm'
 
-lbspr_sim <- LBSPRsim(lbspr_fish, Control = list(modtype = 'absel', Nage = fish$max_age))
+lbspr_sim <- LBSPRsim(lbspr_fish, Control = list(modtype = 'absel', Nage = fish$max_age / fish$time_step))
 
 plotSim(lbspr_sim)
  
@@ -720,10 +720,9 @@ lbspr_lens <- length_samples %>%
   
   lbspr_lengths@Years <- 1:lbspr_lengths@NYears 
     
-  lbspr_fit <- LBSPRfit(lbspr_fish, lbspr_lengths,Control = list(modtype = 'absel', Nage = fish$max_age + 2))
+  lbspr_fit <- LBSPRfit(lbspr_fish, lbspr_lengths,Control = list(modtype = 'absel', Nage = fish$max_age / fish$time_step))
 
   a = fit_lbspr(fish = fish, fleet = fleet, length_comps = length_samples)
-
 
 ```
 ```{r}
@@ -731,7 +730,6 @@ plotSize(lbspr_fit)
 
 lbspr_fit@SL95
 
-lbspr_fit@FM
 
 ```
 
@@ -741,108 +739,6 @@ Let's do one more check and see if you get the same unfished population
 
 
 
-
-
-Check LIME against LBSPR
-```{r}
-
-
- vbk = 0.21
-    linf = 64.58
-    lwa = 0.0245
-    lwb = 2.79
-    S50 = 30
-    selex_input = "length"
-    M50 = 34
-    maturity_input = "length"
-    binwidth = 1
-    CVlen = 0.1
-    SigmaR = 0
-    M = 0.2
-    rho = 0
-  
-  
-  lh <-
-  create_lh_list(
-    vbk = vbk,
-    linf = linf,
-    lwa = lwa,
-    lwb = lwb,
-    S50 = S50,
-    selex_input = selex_input,
-    M50 = M50,
-    maturity_input = maturity_input,
-    binwidth = binwidth,
-    CVlen = CVlen,
-    SigmaR = SigmaR,
-    M = M,
-    rho = rho,
-    F1 = 0.2,
-    SigmaF = 0
-  )
-  
-  simmed_fish <- sim_pop(
-  lh = lh,
-  Nyears = 50,
-  Fdynamics = 'Constant',
-  Rdynamics = 'BH',
-  nburn = 5,
-  modname = 'blah',
-  seed = 42,
-  init_depl = 0,
-  comp_sample = 1000,
-  pool = T,
-  Nyears_comp = 50,
-  mismatch = F
-)
-  
-  plot(1:length(simmed_fish$LF),simmed_fish$LF)
-  
-
-  lbspr_lengths <- simmed_fish$LF %>%
-  t() %>% 
-  as_data_frame() %>% 
-  set_names(1:dim(.)[2])
-
-lbspr_lengths <- data.frame(LMids = simmed_fish$mids %>% as.numeric(),lbspr_lengths, check.names = F)
-
-
-babel_lengths <- new("LB_lengths")
-
-babel_lengths@LMids <- simmed_fish$mids
-
-babel_lengths@LData <- lbspr_lengths %>% as.matrix()
-  
-  babel_lengths@Years <-
-  as.numeric(lbspr_lengths %>% select(-LMids) %>% colnames())
-
-babel_lengths@NYears <- length(babel_lengths@Years)
-
-babel_pars <- new("LB_pars")
-
-babel_pars@Species <- "babelfish"
-
-babel_pars@Linf <- linf
-
-babel_pars@L50 <- M50
-
-babel_pars@L95 <-  M50+1
-
-babel_pars@MK <- M / vbk
-
-babel_pars@BinWidth <- 1
-
-babel_fit <- LBSPRfit(babel_pars, babel_lengths,
-                      yrs = 1:babel_lengths@NYears)
-
-
-real <- data_frame(year = 1:50, spr = simmed_fish$SPR_t, name = 'True Value')
-
-lbspr <- data_frame(year = 1:50, spr = babel_fit@SPR, name = 'LBSPR Estimate')
-
-```
-
-
 # Checking on selectivity
 
 It seems like something is going wrong in the length sampling; the length comps don't seem to be matching selecitivity. 
@@ -850,12 +746,24 @@ It seems like something is going wrong in the length sampling; the length comps 
 
 ```{r}
 
+fish$time_step <- 0.25
+
+fish <- update_fish(fish)
+
 fleet$length_50_sel
 
-check <- sim_sampling(fish = fish, fleet = fleet)
+fleet$initial_effort <- 100
+
+fleet <- update_fleet(fleet = fleet, fish = fish)
+check <- sim_sampling(fish = fish, fleet = fleet, percent_sampled = 1)
 
 check <- check %>% 
   filter(year == max(year))
+
+length_comps <- check %>% 
+  select(catch_length_samples) %>% 
+  unnest() %>% 
+  mutate(year = 1)
 
 check %>% 
 select(n_at_age) %>% 
@@ -895,7 +803,40 @@ select(catch_length_samples) %>%
 
 ```{r}
 
-lbspr_sim <- LBSPRsim(lbspr_fish, Control = list(modtype = 'absel', Nage = fish$max_age + 2))
+lbspr_fish <-  new("LB_pars")
+
+lbspr_fish@Species <- 'WTF'
+
+lbspr_fish@Linf <- fish$linf
+
+lbspr_fish@M <- fish$m
+
+lbspr_fish@MK <- fish$m / fish$vbk
+
+lbspr_fish@Steepness <- fish$steepness
+
+# lbspr_fish@CVLinf <- fish$cv_len
+
+lbspr_fish@L50 <- fish$length_50_mature
+
+lbspr_fish@L95 <- fish$length_95_mature
+
+lbspr_fish@Walpha <- fish$weight_a
+# 
+lbspr_fish@Wbeta <- fish$weight_b
+
+lbspr_fish@SL50 <- fleet$length_50_sel
+
+lbspr_fish@SL95 <- fleet$length_50_sel + fleet$delta
+
+lbspr_fish@FM <- mean(check$fishery[[1]]$f) / fish$m
+
+lbspr_fish@BinWidth <- 1
+
+lbspr_fish@L_units <- 'cm'
+
+
+lbspr_sim <- LBSPRsim(lbspr_fish, Control = list(modtype = 'absel', Nage = 100)) #fish$max_age / fish$time_step - 25))
 
 
 spasm_lengths <- check %>% 
@@ -919,6 +860,14 @@ comp_lengths %>%
   ggplot(aes(length_bin, pnumbers, fill = source)) + 
   geom_point(shape = 21) + 
   geom_vline(data = data_frame(lata = fish$length_at_age %>% floor()), aes(xintercept =lata))
+
+```
+
+
+```{r}
+  a = fit_lbspr(fish = fish, fleet = fleet, length_comps = length_comps)
+a
+check$fishery[[1]]$f %>% unique() / fish$m
 
 ```
 
@@ -977,4 +926,7 @@ tester <-
   )
 
 ```
+THE CONCENSUS. lbspr is useless for estimating things from other operating models, unless you happen to perfectly tune nage manually. Give up on it for now, spend the rest of the flight showing a simple F and SPR calculation given knowledge of selectivity. LBSPR may be useful for real data, but this actually calls that into question for me. The world you're simulating might be less common, but it's not insane, and it's troubling that LBSPR can't replicate it at all. This operating model should just be a special case of the broader world of possible scenarios, and LBSPR should be able to pick it up if it's working correctly. 
+
+
 

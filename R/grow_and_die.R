@@ -13,7 +13,7 @@ grow_and_die <- function(numbers, f, mpa, fish, fleet) {
 
   # survival  <- exp(-(fish$m + (f * (!mpa) * fleet$sel_at_age)))
 
-  survival  <- exp(-(fish$m + (f * fleet$sel_at_age)))
+  survival  <- exp(-fish$time_step*(fish$m + (f * fleet$sel_at_age)))
 
   death <-  1 - survival
 
@@ -26,7 +26,7 @@ grow_and_die <- function(numbers, f, mpa, fish, fleet) {
     survivors[max_index] + numbers[max_index] * survival[max_index]
 
   caught <-
-    (f * fleet$sel_at_age) / (fish$m + (f * fleet$sel_at_age)) *  (numbers * death)
+    (fish$time_step * f * fleet$sel_at_age) / (fish$time_step * (fish$m + (f * fleet$sel_at_age))) *  (numbers * death)
   # return(survivors)
 
   return(list(survivors = survivors, caught = caught))

@@ -161,6 +161,7 @@ create_fish <- function(common_name = 'white seabass',
   # if (any(c(is.na(linf), is.na(vbk), is.na(t0)))) {
   #   warning("Not enough Von Bert Data")
   # }
+  max_age <- ((-log(0.01)/m)) %>% floor()
 
   if (is.na(vbk)){
 

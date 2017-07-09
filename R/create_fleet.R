@@ -42,7 +42,6 @@ create_fleet <- function(eq_f = NA,
   age_50_sel <- (log(1 - length_50_sel / fish$linf) / -fish$vbk) + fish$t0
 
   age_95_sel <- (log(1 - length_95_sel / fish$linf) / -fish$vbk) + fish$t0
-
   sel_at_age <-
   ((1 / (1 + exp(-log(
     19
@@ -52,7 +51,7 @@ create_fleet <- function(eq_f = NA,
   fleet <- list(
     eq_f = eq_f,
     length_50_sel = length_50_sel,
-    delta = 1,
+    delta = delta,
     sel_at_age = sel_at_age,
     mpa_reaction = mpa_reaction,
     price = price,

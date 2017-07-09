@@ -40,7 +40,6 @@ sample_lengths <-
       linf * (1 - exp(-k * (seq(
         min_age, max_age, by = time_step
       ) - t0)))
-
     p_n_at_age <- n_at_age %>%
       group_by(age) %>%
       summarise(numbers = sum(!!sample_col)) %>%
@@ -80,16 +79,26 @@ sample_lengths <-
       group_by(length_bin) %>%
       summarise(prob_sampled = sum(p_bin * p_sampled_at_age))
 
-    length_comps <-
-      rmultinom(1, size = length_comp_samples, prob = p_sampling_length_bin$prob_sampled) %>% as.numeric()
+    if (length_comp_samples > 0) {
+      length_comps <-
+        rmultinom(1, size = length_comp_samples, prob = p_sampling_length_bin$prob_sampled) %>% as.numeric()
 
-    # p_sampling_length_bin %>%
-    #   ggplot(aes(length_bin, prob_sampled)) +
-    #   geom_point() +
-    #   geom_vline(data = data_frame(lata = fish$length_at_age %>% floor()), aes(xintercept =lata))
-    length_comps <-
-      data_frame(length_bin = unique(p_length_at_age$length_bin),
-                 numbers = length_comps)
+      # p_sampling_length_bin %>%
+      #   ggplot(aes(length_bin, prob_sampled)) +
+      #   geom_point() +
+      #   geom_vline(data = data_frame(lata = fish$length_at_age %>% floor()), aes(xintercept =lata))
+      length_comps <-
+        data_frame(length_bin = unique(p_length_at_age$length_bin),
+                   numbers = length_comps)
+
+    } else {
+      length_comps <-
+        data_frame(length_bin = unique(p_length_at_age$length_bin),
+                   numbers = 0)
+
+    }
+
+
     return(length_comps)
 
   }
