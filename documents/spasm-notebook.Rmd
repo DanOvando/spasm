@@ -37,7 +37,9 @@ fish <- create_fish(adult_movement = 1e-3,
                     age_mature = 2,
                     vbk = .2,
                     t0 = 0,
+                    min_age = 0,
                     max_age = 20,
+                    time_step = 1,
                     weight_a = 1e-3,
                     weight_b = 3)
 
@@ -188,7 +190,8 @@ length_samples <- sample_lengths(n_at_age = n_at_age,
                                  linf = fish$linf,
                                  t0 = fish$t0,
                                  sample_type = 'catch',
-                                 percent_sampled = 1)
+                                 percent_sampled = 1,
+                                 time_step = 1)
 
     length_samples %>%
       ggplot(aes(length_bin, numbers)) +
@@ -207,7 +210,9 @@ age_samples <- length_to_age(length_samples = length_samples,
                              k = fish$vbk,
                              linf = fish$linf,
                              t0 = fish$t0,
-                             max_age = max(tester$age) - 1)
+                             max_age = fish$max_age,
+                             min_age = fish$min_age,
+                             time_step = fish$time_step)
 
 age_samples$numbers %>% sum()
 
@@ -346,7 +351,8 @@ length_samples <- sample_lengths(n_at_age = n_at_age,
                                  linf = fish$linf,
                                  t0 = fish$t0,
                                  sample_type = 'catch',
-                                 percent_sampled = 1)
+                                 percent_sampled = 1,
+                                 time_step = fish$time_step)
 
     length_samples %>%
       ggplot(aes(length_bin, numbers)) +
@@ -366,7 +372,8 @@ length_samples <- tester %>%
                                  linf = fish$linf,
                                  t0 = fish$t0,
                                  sample_type = 'catch',
-                                 percent_sampled = 1))) %>% 
+                                 percent_sampled = 1,
+                                 fish$time_step))) %>% 
   select(-data) %>% 
   unnest()
 
@@ -392,7 +399,9 @@ check age sampling
                              k = fish$vbk,
                              linf = fish$linf,
                              t0 = fish$t0,
-                             max_age = max(tester$age) - 1)
+                             max_age = fish$max_age,
+                             min_age = fish$min_age,
+                             time_step = fish$time_step)
 
 age_samples %>% 
   mutate(age_type = 'sampled') %>% 
@@ -453,7 +462,9 @@ fish <- create_fish(adult_movement = 1e-3,
                     cv_len = 0.2,
                     length_mature =  34,
                     m = 0.2,
+                    min_age = 0,
                     max_age = floor(-log(0.01) / 0.2),
+                    time_step = 1,
                     weight_a = 0.0245,
                     weight_b = 2.79, 
                     sigma_r = 0,
@@ -524,9 +535,8 @@ test_data %>%
   ggplot(aes(age, log_numbers)) + 
   geom_point()
 
-
-
 ```
+
 ```{r}
 
 
@@ -580,7 +590,7 @@ fish <- create_fish(adult_movement = 1e-3,
                     cv_len = 0,
                     length_50_mature  =  37,
                     length_95_mature = 38,
-                    m = 0.43,
+                    m = 0.2,
                     min_age = 0,
                     max_age = floor(-log(0.01) / fish$m),
                     time_step = 0.25,
@@ -617,22 +627,22 @@ fish$max_age <- ((-log(0.01)/fish$m)/fish$time_step) %>% floor()
 
 fish <- update_fish(fish)
 
-fleet$length_50_sel <- 0.5* fish$linf
+fleet$length_50_sel <- 0* fish$linf
 
-fleet$initial_effort <- 100
+fleet$initial_effort <- 50
 
 fleet <- update_fleet(fleet, fish)
 
   cc_fishery <- sim_fishery(fish = fish, fleet = fleet,
     manager  = create_manager(mpa_size = 0, year_mpa = 10),
     num_patches = 1,
-    burn_year = 30,
-    sim_years = 100
+    burn_year = 100,
+    sim_years = 300
   )
 
 
 n_at_age <- cc_fishery %>% 
-  filter(year > max(year) - 5) %>% 
+  filter(year == max(year)) %>% 
   select(patch,age, numbers, numbers_caught)
 
 length_samples <- sample_lengths(n_at_age = n_at_age,
@@ -649,9 +659,6 @@ z <- run_catch_curve(length_comps = length_samples, fish = fish)
 z
 mean(cc_fishery$f) + fish$m
 
-f_v_m <- mean(cc_fishery$f) / fish$m
-
-f_v_m
 ```
 
 OK so it's not that, the length resampling works 

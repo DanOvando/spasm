@@ -19,26 +19,35 @@ run_catch_curve <- function(length_comps, fish) {
     time_step = fish$time_step
   )
 
-
   cc_dat <- age_comps %>%
     ungroup() %>%
-    mutate(log_numbers = log(pmax(1e-3, numbers)))
+    mutate(log_numbers = ifelse(numbers > 0, log(numbers), NA))
 
   peak_age <- cc_dat$age[cc_dat$numbers == max(cc_dat$numbers)]
 
+  # first_zero <- cc_dat$age[cc_dat$age > peak_age & cc_dat$numbers <= 1][1]
+  #
+  # if(is.na(first_zero)){first_zero <-  max(cc_dat$age) + 1}
+
   cc_dat <- cc_dat %>%
-    filter(age > peak_age)
+    filter(age >= peak_age)
+
   cc <- lm(log_numbers ~ age, data = cc_dat)
+
+  pos_ages <- cc_dat$numbers > 0
+
+  cc_weights <- rep(0, length(pos_ages))
 
   ln_hat <- predict(cc) %>% as.numeric()
 
-  percent_rank(ln_hat)
+  ln_hat <- (ln_hat - min(ln_hat)) / sum(ln_hat - min(ln_hat))
 
-  cc_weights <- (ln_hat - min(ln_hat)) / sum(ln_hat - min(ln_hat))
-browser()
+  cc_weights[pos_ages] <- ln_hat
+
   cc <- lm(log_numbers ~ age, data = cc_dat, weights = cc_weights)
 
-  z <- cc$coefficients['age'] %>% as.numeric()
+  z <- (cc$coefficients['age'] %>% as.numeric()) * fish$time_step
+
   return(z)
 
 }
