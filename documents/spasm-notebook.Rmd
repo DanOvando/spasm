@@ -23,7 +23,6 @@ library(modelr)
 library(Rcpp)
 library(RcppEigen)
 library(viridis)
-library(LIME)
 library(LBSPR)
 
 # sourceCpp("scripts/eigen_mat_mult.cpp")
@@ -928,5 +927,7 @@ tester <-
 ```
 THE CONCENSUS. lbspr is useless for estimating things from other operating models, unless you happen to perfectly tune nage manually. Give up on it for now, spend the rest of the flight showing a simple F and SPR calculation given knowledge of selectivity. LBSPR may be useful for real data, but this actually calls that into question for me. The world you're simulating might be less common, but it's not insane, and it's troubling that LBSPR can't replicate it at all. This operating model should just be a special case of the broader world of possible scenarios, and LBSPR should be able to pick it up if it's working correctly. 
 
+# Issues with aging
 
+There's a slight problem with the age conversions at large lengths. For very small growth increments, multiple age classess fall within one length bin, where a length bin is only 1cm. So, the numbers in that bin then get smoothed out over the ages. Not a big deal, but it's somethimg
 

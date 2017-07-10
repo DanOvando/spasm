@@ -22,6 +22,16 @@
 #' @param query_fishbase
 #' @param lmat_to_linf_ratio
 #' @param r0
+#' @param cv_len
+#' @param length_units
+#' @param min_age
+#' @param time_step
+#' @param weight_units
+#' @param delta_mature
+#' @param lhi_type
+#' @param price
+#' @param sigma_r
+#' @param rec_ac
 #'
 #' @return a fish list object
 #' @export
@@ -193,7 +203,7 @@ create_fish <- function(common_name = 'white seabass',
        is.na(age_95_mature)) & is.na(age_mature) == F) {
     age_50_mature <- age_mature
 
-    age_95_mature <- 1.01 * age_50_mature
+    age_95_mature <-  age_50_mature + delta_mature
 
   } else if (is.na(age_mature)) {
     if (is.na(length_mature)) {
@@ -236,6 +246,7 @@ create_fish <- function(common_name = 'white seabass',
   fish$length_95_mature <-  length_95_mature
   fish$age_50_mature <-  age_50_mature
   fish$age_95_mature <-  age_95_mature
+  fish$delta_mature <- delta_mature
   fish$age_mature <-  age_mature
   fish$length_mature <-  length_mature
   fish$m <-  m

@@ -63,7 +63,7 @@ fit_lbspr <- function(fish, fleet, length_comps)
 
   lbspr_lengths@Years <- 1:lbspr_lengths@NYears
 
-  lbspr_fit <- LBSPRfit(lbspr_fish, lbspr_lengths,Control = list(modtype = 'absel', Nage = fish$max_age + 2))
+  lbspr_fit <- LBSPRfit(lbspr_fish, lbspr_lengths,Control = list(modtype = 'absel', Nage = fish$max_age/fish$time_step))
 
   out <- lbspr_fit@Ests
 

@@ -23,29 +23,33 @@ run_catch_curve <- function(length_comps, fish) {
     ungroup() %>%
     mutate(log_numbers = ifelse(numbers > 0, log(numbers), NA))
 
-  peak_age <- cc_dat$age[cc_dat$numbers == max(cc_dat$numbers)]
+  peak_age <- cc_dat$age[cc_dat$numbers == max(cc_dat$numbers)][1]
 
   # first_zero <- cc_dat$age[cc_dat$age > peak_age & cc_dat$numbers <= 1][1]
   #
   # if(is.na(first_zero)){first_zero <-  max(cc_dat$age) + 1}
-
   cc_dat <- cc_dat %>%
-    filter(age >= peak_age, age < max(age))
-
-  cc <- lm(log_numbers ~ age, data = cc_dat)
+    filter(age >= peak_age, age < max(age, na.rm = T))
 
   pos_ages <- cc_dat$numbers > 0
 
-  cc_weights <- rep(0, length(pos_ages))
+  if (sum(pos_ages) > 1 & nrow(cc_dat) > 0) {
+    cc <- lm(log_numbers ~ age, data = cc_dat)
 
-  ln_hat <- predict(cc) %>% as.numeric()
 
-  ln_hat <- (ln_hat - min(ln_hat)) / sum(ln_hat - min(ln_hat))
 
-  cc_weights[pos_ages] <- ln_hat
-  cc <- lm(log_numbers ~ age, data = cc_dat, weights = cc_weights)
+    cc_weights <- rep(0, length(pos_ages))
 
-  z <- (cc$coefficients['age'] %>% as.numeric())
+    ln_hat <- predict(cc) %>% as.numeric()
+    ln_hat <-
+      (ln_hat - min(ln_hat)) / sum(ln_hat - min(ln_hat, na.rm = T))
+    cc_weights[pos_ages] <- ln_hat
+    cc <- lm(log_numbers ~ age, data = cc_dat, weights = cc_weights)
+
+    z <- (cc$coefficients['age'] %>% as.numeric())
+  } else{
+    z <- 0
+  }
 
   return(z)
 

@@ -4,8 +4,8 @@
 \alias{sample_lengths}
 \title{sample_lenghts}
 \usage{
-sample_lengths(n_at_age, cv, k, linf, t0, sample_type = "catch",
-  percent_sampled = 0.1)
+sample_lengths(n_at_age, cv, k, linf, t0, time_step = 1,
+  sample_type = "catch", percent_sampled = 0.1)
 }
 \arguments{
 \item{percent_sampled}{}

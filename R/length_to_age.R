@@ -40,7 +40,7 @@ length_to_age <-
     p_length_at_age <-
       expand.grid(
         age =  seq(min_age, max_age, by = time_step),
-        length_bin = 0:(1.5 * linf)
+        length_bin = 0:(10 * linf)
       ) %>%
       as_data_frame() %>%
       left_join(length_at_age_vars, by = 'age') %>%

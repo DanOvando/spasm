@@ -5,10 +5,10 @@
 \title{sim_sampling}
 \usage{
 sim_sampling(fish, fleet, sim_years = 25, burn_year = 25,
-  percent_sampled = 0.25)
+  percent_sampled = 0.25, num_patches = 1)
 }
 \arguments{
-\item{percent_sampled}{}
+\item{num_patches}{}
 }
 \value{
 length and age samples

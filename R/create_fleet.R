@@ -13,6 +13,11 @@
 #' @param fleet_model
 #' @param effort_allocation
 #' @param initial_effort
+#' @param cost_function
+#' @param cost_slope
+#' @param tech_rate
+#' @param target_catch
+#' @param catches
 #'
 #' @return a fleet object
 #' @export
@@ -21,6 +26,7 @@
 create_fleet <- function(eq_f = NA,
                          length_50_sel = 1,
                          delta = 2,
+                         fish,
                          mpa_reaction = 'concentrate',
                          price = 1,
                          cost = .1,
@@ -30,11 +36,11 @@ create_fleet <- function(eq_f = NA,
                          fleet_model = 'constant-effort',
                          effort_allocation = 'gravity',
                          cost_function = 'constant',
+                         cost_slope = 0,
                          tech_rate = 0,
                          initial_effort = 100,
                          target_catch = 0,
-                         catches = NA,
-                         fish) {
+                         catches = NA) {
 
 
   length_95_sel <- (length_50_sel + delta)
@@ -47,7 +53,6 @@ create_fleet <- function(eq_f = NA,
     19
   ) * ((seq(fish$min_age,fish$max_age, by = fish$time_step) - age_50_sel) / (age_95_sel - age_50_sel)
   )))))
-
   fleet <- list(
     eq_f = eq_f,
     length_50_sel = length_50_sel,
@@ -65,6 +70,7 @@ create_fleet <- function(eq_f = NA,
     target_catch = target_catch,
     catches = catches,
     cost_function = cost_function,
+    cost_slope = cost_slope,
     tech_rate = tech_rate
   )
 }
