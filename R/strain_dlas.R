@@ -81,10 +81,8 @@ strain_dlas <- function(fish,
     update_fleet(fish = babel_fish, fleet = babel_fleet)
 
   # run catch curve
-
   cc <-
     run_catch_curve(fish = babel_fish, length_comps = length_comps)
-
   cc_m <- babel_fish$m
 
   cc_z <- -cc

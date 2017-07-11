@@ -18,7 +18,6 @@ run_catch_curve <- function(length_comps, fish) {
     min_age = fish$min_age,
     time_step = fish$time_step
   )
-
   cc_dat <- age_comps %>%
     ungroup() %>%
     mutate(log_numbers = ifelse(numbers > 0, log(numbers), NA))
@@ -33,8 +32,8 @@ run_catch_curve <- function(length_comps, fish) {
 
   pos_ages <- cc_dat$numbers > 0
 
-  if (sum(pos_ages) > 1 & nrow(cc_dat) > 0) {
-    cc <- lm(log_numbers ~ age, data = cc_dat)
+  if (sum(pos_ages) > 2 & nrow(cc_dat) > 0) {
+    cc <- lm(jitter(log_numbers, factor = .001) ~ jitter(age, factor = 0.001), data = cc_dat, singular.ok = T)
 
 
 
@@ -44,13 +43,22 @@ run_catch_curve <- function(length_comps, fish) {
     ln_hat <-
       (ln_hat - min(ln_hat)) / sum(ln_hat - min(ln_hat, na.rm = T))
     cc_weights[pos_ages] <- ln_hat
-    cc <- lm(log_numbers ~ age, data = cc_dat, weights = cc_weights)
+    cc <-
+      lm(
+        jitter(log_numbers, .001) ~ jitter(age, .001),
+        data = cc_dat,
+        weights = cc_weights,
+        singular.ok = T
+      )
 
-    z <- (cc$coefficients['age'] %>% as.numeric())
+    z <- (cc$coefficients['jitter(age, 0.001)'] %>% as.numeric())
   } else{
     z <- 0
   }
 
+  if (is.na(z)) {
+    z = 0
+  }
   return(z)
 
 }
