@@ -98,7 +98,6 @@ sample_lengths <-
 
     }
 
-
     return(length_comps)
 
   }

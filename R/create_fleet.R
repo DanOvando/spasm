@@ -18,6 +18,7 @@
 #' @param tech_rate
 #' @param target_catch
 #' @param catches
+#' @param sigma_effort
 #'
 #' @return a fleet object
 #' @export
@@ -40,7 +41,8 @@ create_fleet <- function(eq_f = NA,
                          tech_rate = 0,
                          initial_effort = 100,
                          target_catch = 0,
-                         catches = NA) {
+                         catches = NA,
+                         sigma_effort = 0) {
 
 
   length_95_sel <- (length_50_sel + delta)
@@ -71,6 +73,7 @@ create_fleet <- function(eq_f = NA,
     catches = catches,
     cost_function = cost_function,
     cost_slope = cost_slope,
-    tech_rate = tech_rate
+    tech_rate = tech_rate,
+    sigma_effort = sigma_effort
   )
 }

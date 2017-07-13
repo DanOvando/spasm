@@ -24,11 +24,9 @@ sim_fishery <-
            burn_year = 10,
            crashed_pop = 1e-3,
            ...) {
-
     sim_years <- burn_year + sim_years
 
-    if (fleet$fleet_model == 'supplied-catch'){
-
+    if (fleet$fleet_model == 'supplied-catch') {
       sim_years <- sim_years + 1
 
     }
@@ -54,8 +52,7 @@ sim_fishery <-
       as_data_frame() %>%
       arrange(year, patch, age)
 
-    if (fleet$cost_function == 'distance from port'){
-
+    if (fleet$cost_function == 'distance from port') {
       cost_frame <- data_frame(patch = 1:num_patches) %>%
         mutate(cost = fleet$cost * (1 + fleet$cost_slope * (patch - 1)))
 
@@ -71,7 +68,17 @@ sim_fishery <-
 
     q <- rep(fleet$q, sim_years)
 
-    rec_devs <- rnorm(sim_years, mean = -(fish$sigma_r ^ 2) / 2, sd = fish$sigma_r)
+    rec_devs <-
+      rnorm(sim_years,
+            mean = -(fish$sigma_r ^ 2) / 2,
+            sd = fish$sigma_r)
+
+    effort_devs <-
+      rnorm(sim_years,
+            mean = -(fleet$sigma_effort ^ 2) / 2,
+            sd = fleet$sigma_effort)
+
+
     ## autocorrelated recruitment deviations
     for (t in 2:length(rec_devs)) {
       rec_devs[t] <-
@@ -130,7 +137,7 @@ sim_fishery <-
       mutate(
         distance = source - sink,
         prob = 1 / ((2 * pi) ^ (1 / 2) * fish$larval_movement) * exp(-(distance) ^
-                                                                      2 / (2 * fish$larval_movement ^ 2))
+                                                                       2 / (2 * fish$larval_movement ^ 2))
       ) %>%
       group_by(source) %>%
       mutate(prob_move = prob / sum(prob))
@@ -152,7 +159,7 @@ sim_fishery <-
       now_year <- pop$year == y
 
       pop[now_year &
-            pop$age > fish$min_age,] <-
+            pop$age > fish$min_age, ] <-
         move_fish(
           pop %>% filter(year == y, age > fish$min_age),
           fish = fish,
@@ -181,17 +188,20 @@ sim_fishery <-
       }
       # fleet response
 
-      if (fleet$fleet_model == 'constant-catch' & y > burn_year){
-
-        effort_for_catch <- nlminb(1, catch_target, target_catch =
-                 fleet$target_catch,
-               pop = pop %>% filter(year == y),
-               num_patches = num_patches,
-               mpa = mpa,
-               fleet = fleet,
-               lower = 0,
-               use = 'opt',
-               fish = fish)
+      if (fleet$fleet_model == 'constant-catch' & y > burn_year) {
+        effort_for_catch <- nlminb(
+          1,
+          catch_target,
+          target_catch =
+            fleet$target_catch,
+          pop = pop %>% filter(year == y),
+          num_patches = num_patches,
+          mpa = mpa,
+          fleet = fleet,
+          lower = 0,
+          use = 'opt',
+          fish = fish
+        )
 
         effort[y] <- effort_for_catch$par
         # popcheck <- catch_target(total_effort = effort_for_catch$par,target_catch =
@@ -211,19 +221,22 @@ sim_fishery <-
 
       }
 
-      if (fleet$fleet_model == 'supplied-catch' & y > burn_year){
-
+      if (fleet$fleet_model == 'supplied-catch' & y > burn_year) {
         target_catch <- fleet$catches[y - burn_year]
 
-        effort_for_catch <- nlminb(1, catch_target, target_catch =
-                                     target_catch,
-                                   pop = pop %>% filter(year == y),
-                                   num_patches = num_patches,
-                                   mpa = mpa,
-                                   fleet = fleet,
-                                   lower = 0,
-                                   use = 'opt',
-                                   fish = fish)
+        effort_for_catch <- nlminb(
+          1,
+          catch_target,
+          target_catch =
+            target_catch,
+          pop = pop %>% filter(year == y),
+          num_patches = num_patches,
+          mpa = mpa,
+          fleet = fleet,
+          lower = 0,
+          use = 'opt',
+          fish = fish
+        )
 
         effort[y] <- effort_for_catch$par
 
@@ -242,24 +255,43 @@ sim_fishery <-
           mpa = mpa
         )
 
-      if (fleet$tech_rate > 0 & y > burn_year){
-        q[y] <- q[y - 1] + pmax(0,rnorm(1,fleet$tech_rate * q[y - 1], fleet$tech_rate*fleet$q))
+      if (fleet$tech_rate > 0 & y > burn_year) {
+        q[y] <-
+          q[y - 1] + pmax(0,
+                          rnorm(1, fleet$tech_rate * q[y - 1], fleet$tech_rate * fleet$q))
       }
 
       pop[now_year, 'f'] <-
         pop[now_year, 'effort'] * q[y]
 
       # grow and die -----
+# if (y == 72){browser()}
+
+      # wtf <-  pop[now_year, ] %>%
+      #   group_by(patch) %>%
+      #   mutate(numbers = grow_and_die(
+      #     numbers = numbers,
+      #     f = f,
+      #     mpa = mpa,
+      #     fish = fish,
+      #     fleet = fleet,
+      #     y = y
+      #   )$survivors) %>%
+      #   ungroup() %>%
+      #   {
+      #     .$numbers
+      #   }
 
       pop[pop$year == (y + 1), 'numbers'] <-
-        pop[now_year,] %>%
+        pop[now_year, ] %>%
         group_by(patch) %>%
         mutate(numbers = grow_and_die(
           numbers = numbers,
           f = f,
           mpa = mpa,
           fish = fish,
-          fleet = fleet
+          fleet = fleet,
+          y = y
         )$survivors) %>%
         ungroup() %>%
         {
@@ -268,14 +300,15 @@ sim_fishery <-
 
 
       pop[now_year, 'numbers_caught'] <-
-        pop[now_year,] %>%
+        pop[now_year, ] %>%
         group_by(patch) %>%
         mutate(numbers_caught = grow_and_die(
           numbers = numbers,
           f = f,
           mpa = mpa,
           fish = fish,
-          fleet = fleet
+          fleet = fleet,
+          y= y
         )$caught) %>%
 
         ungroup() %>%
@@ -297,8 +330,23 @@ sim_fishery <-
       # Adjust fleet
 
       if (y > burn_year & fleet$fleet_model == 'open-access') {
+        # browser()
+        #         msy_profits <- pop %>%
+        #           filter(year == burn_year) %>%
+        #           left_join(data.frame(age = seq(fish$min_age, fish$max_age, fish$time_step),
+        #                                sel = fleet$sel_at_age, by = 'age')) %>%
+        #           mutate(catch = (fish$m * sel) / (fish$m +fish$m * sel) * biomass *(1 - exp(-(fish$m + fish$m * sel)))) %>%
+        #           mutate(patch_age_costs = ((cost) * (fish$m / q) ^ fleet$beta) / fish$max_age) %>%
+        #           mutate(profs = fish$price * catch - patch_age_costs) #divide costs up among each age class
+        #
+        # msy_profits <- sum(msy_profits$profs)
+        # effort[y + 1]  <-
+        #
+        #  effort[y] * (SB_t[y - 1] / (Fequil * SB0)) ^ Frate * exp(FishDev[y])
+
+
         effort[y + 1] <-
-          max(0, effort[y] + fleet$theta * sum(pop$profits[now_year]))
+          max(0, effort[y] + fleet$theta * sum(pop$profits[now_year])) * exp(effort_devs[y + 1])
       } else if (y > burn_year &
                  fleet$fleet_model == 'constant-effort') {
         effort[y + 1] <- effort[y]
@@ -306,11 +354,10 @@ sim_fishery <-
       }
 
       # spawn ----
-
       pop$numbers[pop$year == (y + 1) &
                     pop$age == fish$min_age] <-
         calculate_recruits(
-          pop = pop[pop$year == (y + 1), ],
+          pop = pop[pop$year == (y + 1),],
           fish = fish,
           num_patches = num_patches,
           phase = model_phase,
@@ -340,7 +387,6 @@ sim_fishery <-
     pop <- pop %>%
       filter(year > burn_year, year < max(year)) %>%
       mutate(eventual_mpa = patch %in% mpa_locations)
-
     return(pop)
 
   }

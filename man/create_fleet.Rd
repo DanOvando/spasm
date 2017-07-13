@@ -4,17 +4,17 @@
 \alias{create_fleet}
 \title{create_fleet}
 \usage{
-create_fleet(eq_f = NA, length_50_sel = 1, delta = 2,
+create_fleet(eq_f = NA, length_50_sel = 1, delta = 2, fish,
   mpa_reaction = "concentrate", price = 1, cost = 0.1, beta = 1.3,
   theta = 0.1, q = 0.001, fleet_model = "constant-effort",
   effort_allocation = "gravity", cost_function = "constant",
   cost_slope = 0, tech_rate = 0, initial_effort = 100, target_catch = 0,
-  catches = NA, fish)
+  catches = NA, sigma_effort = 0)
 }
 \arguments{
 \item{delta}{cm above length50 at 95 selectivity}
 
-\item{catches}{}
+\item{sigma_effort}{}
 }
 \value{
 a fleet object
