@@ -67,7 +67,6 @@ sim_fishery <-
     f <- vector(mode = 'double', length = sim_years)
 
     q <- rep(fleet$q, sim_years)
-
     rec_devs <-
       rnorm(sim_years,
             mean = -(fish$sigma_r ^ 2) / 2,
@@ -159,7 +158,7 @@ sim_fishery <-
       now_year <- pop$year == y
 
       pop[now_year &
-            pop$age > fish$min_age, ] <-
+            pop$age > fish$min_age,] <-
         move_fish(
           pop %>% filter(year == y, age > fish$min_age),
           fish = fish,
@@ -265,7 +264,7 @@ sim_fishery <-
         pop[now_year, 'effort'] * q[y]
 
       # grow and die -----
-# if (y == 72){browser()}
+      # if (y == 72){browser()}
 
       # wtf <-  pop[now_year, ] %>%
       #   group_by(patch) %>%
@@ -283,7 +282,7 @@ sim_fishery <-
       #   }
 
       pop[pop$year == (y + 1), 'numbers'] <-
-        pop[now_year, ] %>%
+        pop[now_year,] %>%
         group_by(patch) %>%
         mutate(numbers = grow_and_die(
           numbers = numbers,
@@ -300,16 +299,18 @@ sim_fishery <-
 
 
       pop[now_year, 'numbers_caught'] <-
-        pop[now_year, ] %>%
+        pop[now_year,] %>%
         group_by(patch) %>%
-        mutate(numbers_caught = grow_and_die(
-          numbers = numbers,
-          f = f,
-          mpa = mpa,
-          fish = fish,
-          fleet = fleet,
-          y= y
-        )$caught) %>%
+        mutate(
+          numbers_caught = grow_and_die(
+            numbers = numbers,
+            f = f,
+            mpa = mpa,
+            fish = fish,
+            fleet = fleet,
+            y = y
+          )$caught
+        ) %>%
 
         ungroup() %>%
         {
@@ -357,7 +358,7 @@ sim_fishery <-
       pop$numbers[pop$year == (y + 1) &
                     pop$age == fish$min_age] <-
         calculate_recruits(
-          pop = pop[pop$year == (y + 1),],
+          pop = pop[pop$year == (y + 1), ],
           fish = fish,
           num_patches = num_patches,
           phase = model_phase,

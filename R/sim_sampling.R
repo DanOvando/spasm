@@ -35,9 +35,6 @@ sim_sampling <- function(fish, fleet, sim_years = 25, burn_year = 25,percent_sam
                                                       percent_sampled = 1,
                                                       time_step = fish$time_step)))
 
-  fishery %>% filter(year == min(year)) %>% group_by(age) %>%
-    summarise(n = sum(numbers))
-
   length_and_age_comps <- length_and_age_comps %>%
     mutate(pop_ages = map(pop_length, ~length_to_age(length_samples = .x,
                                                      cv = fish$cv_len,

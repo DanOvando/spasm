@@ -7,7 +7,7 @@
 grow_and_die(numbers, f, mpa, fish, fleet, y)
 }
 \arguments{
-\item{fleet}{}
+\item{y}{}
 }
 \value{
 numbers and catch at age for all ages above recruits
