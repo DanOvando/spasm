@@ -3,6 +3,11 @@ title: "SpASM"
 output: html_notebook
 ---
 
+```{r}
+knitr::opts_chunk$set(echo = F, eval = F)
+```
+
+
 This repo is an updated version of the GASP module developed for Ovando et al. 2016 Fish and Fisheries. 
 
 Development is centered around support of 
@@ -939,4 +944,75 @@ THE CONCENSUS. lbspr is useless for estimating things from other operating model
 # Issues with aging
 
 There's a slight problem with the age conversions at large lengths. For very small growth increments, multiple age classess fall within one length bin, where a length bin is only 1cm. So, the numbers in that bin then get smoothed out over the ages. Not a big deal, but it's somethimg
+
+
+# scrooge support
+
+So what you're up to now is a) making sure that spasm still works and b) get the economic indicators up and running. Once you've done that, you can also revisit your length comp generation and sampling. Eventually I'd kind of like to add in the growth-type-groups thing 
+
+
+```{r}
+
+library(spasm)
+library(tidyverse)
+
+fish <- spasm::create_fish(linf = 100)
+
+fleet <- spasm::create_fleet(fish = fish)
+
+manager <- spasm::create_manager(mpa_size = 0)
+
+sim <- spasm::sim_fishery(fish = fish,
+                   fleet = fleet, 
+                   manager = manager,
+                   num_patches = 1,
+                   sim_years = 100,
+                   burn_year = 50)
+
+sim %>% 
+  group_by(year) %>% 
+  summarise(ssb = sum(effort)) %>% 
+  ggplot(aes(year, ssb)) + 
+  geom_line() + 
+  geom_point()
+
+```
+
+sweet, that thing still works and looks about right. 
+
+Now let's see if open access as it is currently defined still works
+
+
+```{r}
+
+fleet <-
+  spasm::update_fleet(
+  fleet = purrr::list_modify(
+  fleet,
+  fleet_model = "open-access",
+  theta = 0.025,
+  cost = 1,
+  target_catch = 100,
+  sigma_effort = 1
+  ),
+  fish = fish
+  )
+
+sim <- spasm::sim_fishery(fish = fish,
+                   fleet = fleet, 
+                   manager = manager,
+                   num_patches = 1,
+                   sim_years = 20,
+                   burn_year = 10)
+
+sim %>% 
+  group_by(year) %>% 
+  summarise(ssb = sum(biomass)) %>% 
+  ggplot(aes(year, ssb)) + 
+  geom_line() + 
+  geom_point()
+
+```
+
+OK, looks like that works for all the basic functional forms, need to check on supplied catch sometime but that's a problem for another day. 
 

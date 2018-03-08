@@ -204,47 +204,70 @@ sim_fishery <-
 
 
       }
-      # fleet response
-
-      if (fleet$fleet_model == 'constant-catch' & y > burn_year) {
-        effort_for_catch <- nlminb(
-          1,
-          catch_target,
-          target_catch =
-            fleet$target_catch,
-          pop = pop %>% filter(year == y),
-          num_patches = num_patches,
-          mpa = mpa,
-          fleet = fleet,
-          lower = 0,
-          use = 'opt',
-          fish = fish
-        )
-
-        effort[y] <- effort_for_catch$par
-
+      # Adjust fleet
+      if (y > (burn_year )){
+      effort[y] <- determine_effort(
+        last_effort = ifelse(y > (burn_year + 1),effort[y - 1],fleet$initial_effort),
+        fleet = fleet,
+        fish = fish,
+        y = y,
+        burn_year = burn_year,
+        pop = pop,
+        mpa = mpa,
+        num_patches = num_patches,
+        effort_devs = effort_devs
+      )
       }
 
-      if (fleet$fleet_model == 'supplied-catch' & y > burn_year) {
-        target_catch <- fleet$catches[y - burn_year]
+      # if (y > burn_year & fleet$fleet_model == 'open-access') {
+      #   browser()
+      #   effort[y] <-
+      #     max(0, effort[y - 1] + fleet$theta * sum(pop$profits[now_year])) * exp(effort_devs[y + 1])
+      # } else if (y > burn_year &
+      #            fleet$fleet_model == 'constant-effort') {
+      #   effort[y + 1] <- effort[y]
+      #
+      # }
 
-        effort_for_catch <- nlminb(
-          1,
-          catch_target,
-          target_catch =
-            target_catch,
-          pop = pop %>% filter(year == y),
-          num_patches = num_patches,
-          mpa = mpa,
-          fleet = fleet,
-          lower = 0,
-          use = 'opt',
-          fish = fish
-        )
+      # if (fleet$fleet_model == 'constant-catch' & y > burn_year) {
+      #   effort_for_catch <- nlminb(
+      #     1,
+      #     catch_target,
+      #     target_catch =
+      #       fleet$target_catch,
+      #     pop = pop %>% filter(year == y),
+      #     num_patches = num_patches,
+      #     mpa = mpa,
+      #     fleet = fleet,
+      #     lower = 0,
+      #     use = 'opt',
+      #     fish = fish
+      #   )
+      #
+      #   effort[y] <- effort_for_catch$par
+      #
+      # }
 
-        effort[y] <- effort_for_catch$par
-
-      }
+      # if (fleet$fleet_model == 'supplied-catch' & y > burn_year) {
+      #   target_catch <- fleet$catches[y - burn_year]
+      #
+      #   effort_for_catch <- nlminb(
+      #     1,
+      #     catch_target,
+      #     target_catch =
+      #       target_catch,
+      #     pop = pop %>% filter(year == y),
+      #     num_patches = num_patches,
+      #     mpa = mpa,
+      #     fleet = fleet,
+      #     lower = 0,
+      #     use = 'opt',
+      #     fish = fish
+      #   )
+      #
+      #   effort[y] <- effort_for_catch$par
+      #
+      # }
 
 
       pop[now_year, 'effort'] <-
@@ -317,17 +340,7 @@ sim_fishery <-
           profits = biomass_caught * fish$price - patch_age_costs
         )
 
-      # Adjust fleet
 
-      if (y > burn_year & fleet$fleet_model == 'open-access') {
-
-        effort[y + 1] <-
-          max(0, effort[y] + fleet$theta * sum(pop$profits[now_year])) * exp(effort_devs[y + 1])
-      } else if (y > burn_year &
-                 fleet$fleet_model == 'constant-effort') {
-        effort[y + 1] <- effort[y]
-
-      }
 
       # spawn ----
 
