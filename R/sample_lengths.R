@@ -19,7 +19,9 @@ sample_lengths <-
            t0,
            time_step = 1,
            sample_type = 'catch',
-           percent_sampled = .1) {
+           percent_sampled = .1,
+           sample_col = NA,
+           linf_buffer = 10) {
     if (sample_type == 'catch') {
       sample_col <- quo(numbers_caught)
 
@@ -56,7 +58,7 @@ sample_lengths <-
     p_length_at_age <-
       expand.grid(
         age = seq(min_age, max_age, by = time_step),
-        length_bin = 0:(10 * linf)
+        length_bin = 0:(linf_buffer * linf)
       ) %>%
       as_data_frame() %>%
       left_join(length_at_age_vars, by = 'age') %>%
@@ -97,7 +99,6 @@ sample_lengths <-
                    numbers = 0)
 
     }
-
     return(length_comps)
 
   }

@@ -7,9 +7,9 @@
 run_catch_curve(length_comps, fish)
 }
 \arguments{
-\item{length_comps}{a data frame with rows length_bin and numbers}
+\item{length_comps}{a data frame with columns length_bin and numbers}
 
-\item{fish}{a spasm fish object}
+\item{fish}{a spasm fish object containing life history}
 }
 \value{
 total mortality estimated by catch curve, z

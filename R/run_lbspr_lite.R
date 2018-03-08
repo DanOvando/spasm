@@ -1,9 +1,9 @@
 #' \code{lbspr_lite} runs a simplified version of LBSPR assuming selectivity is known
 #'
-#' @param f
-#' @param fish
-#' @param fleet
-#' @param length_comps
+#' @param f fishing mortality
+#' @param fish a fish object containing life history data
+#' @param fleet a fleet object containing fleet data
+#' @param length_comps length composition data numbers by length bin
 #' @param use set to find-f to use in optim
 #'
 #' @return either ss of length comps or SPR

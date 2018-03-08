@@ -25,7 +25,7 @@ sim_sampling <- function(fish, fleet, sim_years = 25, burn_year = 25,percent_sam
     select(year,patch,age, numbers, numbers_caught) %>%
     nest(-year,-patch, .key = n_at_age)
 
-  length_and_age_comps  <- length_and_age_comps %>%
+  length_and_age_comps <- length_and_age_comps %>%
     mutate(pop_length = map(n_at_age, ~sample_lengths(n_at_age = .x,
                                                       cv = fish$cv_len,
                                                       k = fish$vbk,

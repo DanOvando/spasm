@@ -78,9 +78,18 @@ tester <-
     manager  = create_manager(mpa_size = 0, year_mpa = 10),
     num_patches = 1,
     burn_year = 25,
-    sim_years = 50
+    sim_years = 50,
+    enviro = sin(1:75),
+    enviro_strength = 0.001,
+    rec_driver = 'environment'
   )
 
+tester %>% 
+  filter(age == min(age)) %>% 
+  ggplot(aes(year, numbers)) + 
+  geom_point()
+  
+  
 tester %>% 
   group_by(year, patch) %>% 
   summarise(te = sum(effort, na.rm = T))

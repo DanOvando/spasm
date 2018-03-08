@@ -1,7 +1,7 @@
 #' \code{run_catch_curve} runs a weighted catch curve on spasm data
 #'
-#' @param length_comps a data frame with rows length_bin and numbers
-#' @param fish a spasm fish object
+#' @param length_comps a data frame with columns length_bin and numbers
+#' @param fish a spasm fish object containing life history
 #'
 #' @return total mortality estimated by catch curve, z
 #' @export

@@ -6,7 +6,7 @@
 model forward with fleets etc.}
 \usage{
 sim_fishery(fish, fleet, manager, num_patches = 10, sim_years = 1,
-  burn_year = 10, crashed_pop = 0.001, ...)
+  burn_year = 10, crashed_pop = 0.001, random_mpas = F, ...)
 }
 \arguments{
 \item{crashed_pop}{}
