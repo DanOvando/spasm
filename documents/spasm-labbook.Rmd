@@ -1047,21 +1047,30 @@ OK, moved from fishbase to fishlife, let's test
 
 ```{r}
 
+library(rstan)
+library(FishLife)
+library(spasm)
+library(tidyverse)
+
 fish <- create_fish(query_fishlife = T, mat_mode = "length")
 
 fleet <- create_fleet(fish = fish)
+
+manager <- create_manager(mpa_size = 0)
 
 fleet <-
   spasm::update_fleet(
   fleet = purrr::list_modify(
   fleet,
   fleet_model = "open-access",
-  initial_effort = 1,
+  initial_effort = 10,
   theta = 0.01,
-  cost = 2,
+  cost = 20,
   price = 1,
   target_catch = 100,
-  sigma_effort = 0.1
+  sigma_effort = 0.1,
+  length_50_sel = 50,
+  theta_tuner = 0.1
   ),
   fish = fish
   )
@@ -1075,7 +1084,7 @@ sim <- spasm::sim_fishery(fish = fish,
 
 sim %>% 
   group_by(year) %>% 
-  summarise(ssb = sum(ssb)) %>% 
+  summarise(ssb = sum(profits)) %>% 
   ggplot(aes(year, ssb)) + 
   geom_line() + 
   geom_point()
@@ -1126,16 +1135,40 @@ Now, let's check on sampling lengths
     
     sampled %>% 
       bind_rows(true) %>% 
-      group_by(source) %>% 
-      mutate(numbers = numbers / sum(numbers)) %>% 
-      ungroup() %>% 
+      group_by(source) %>%
+      mutate(numbers = numbers / sum(numbers)) %>%
+      ungroup() %>%
       ggplot(aes(age, numbers, fill = source)) + 
       geom_density(stat = "identity", alpha = 0.5)
     
 
 ```
 
-Sweet, that actually works pretty damn well! fairly shocked by that honestly. So, you might be ready to go. and get started model fitting tomorrow. 
+Sweet, that actually works pretty damn well! fairly shocked by that honestly. So, you might be ready to go. and get started model fitting tomorrow. damn. 
+
+Let's quickly check on the stock assessment stuff and see if that still works (sort of) before diving into the model fitting. 
+
+
+```{r}
+
+true_f <- sim %>% 
+  group_by(year,patch) %>% 
+  summarise(f = unique(f)) #%>% 
+
+length_comps <- length_and_age_comps %>% 
+  select(year,patch, pop_length) %>% 
+  unnest()
+
+length_comps <- length_comps %>% 
+  nest(-year,-patch, .key = 'length_comps') %>% 
+  left_join(true_f, by = c('year','patch'))
+
+assessments <- length_comps %>% 
+  mutate(assessments = map2(length_comps, f, run_assessments, fish = fish, fleet = fleet))
+
+
+```
+
 
 
 

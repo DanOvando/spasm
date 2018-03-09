@@ -205,7 +205,22 @@ sim_fishery <-
 
       }
       # Adjust fleet
-      if (y > (burn_year )){
+      if (y > (burn_year)){
+
+        if (y == (burn_year + 2)){
+
+          profits <- pop %>%
+          filter(year >= (y - (1 + fleet$profit_lags)), year < y) %>%
+          group_by(year) %>%
+          summarise(profits = sum(profits))
+
+          total_initial_profits <- mean(profits$profits)
+
+           new_theta <- (effort[y-1] *fleet$theta_tuner) / total_initial_profits
+
+           fleet <- update_fleet(fleet = purrr::list_modify(fleet,theta = new_theta), fish = fish)
+      }
+
       effort[y] <- determine_effort(
         last_effort = ifelse(y > (burn_year + 1),effort[y - 1],fleet$initial_effort),
         fleet = fleet,
@@ -215,7 +230,8 @@ sim_fishery <-
         pop = pop,
         mpa = mpa,
         num_patches = num_patches,
-        effort_devs = effort_devs
+        effort_devs = effort_devs,
+        profit_lags = fleet$profit_lags
       )
       }
 

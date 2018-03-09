@@ -9,12 +9,12 @@ create_fleet(eq_f = NA, length_50_sel = 1, delta = 2, fish,
   theta = 0.1, q = 0.001, fleet_model = "constant-effort",
   effort_allocation = "gravity", cost_function = "constant",
   cost_slope = 0, tech_rate = 0, initial_effort = 100, target_catch = 0,
-  catches = NA, sigma_effort = 0)
+  catches = NA, sigma_effort = 0, profit_lags = 4, theta_tuner = 0.25)
 }
 \arguments{
 \item{delta}{cm above length50 at 95 selectivity}
 
-\item{sigma_effort}{}
+\item{theta_tuner}{}
 }
 \value{
 a fleet object

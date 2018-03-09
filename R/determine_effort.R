@@ -28,7 +28,6 @@ determine_effort <-
            profit_lags = 4) {
 
   new_effort <- last_effort
-
   if (fleet$fleet_model == 'constant-catch') {
 
     effort_for_catch <- nlminb(
@@ -77,7 +76,6 @@ determine_effort <-
       filter(year >= (y - (1 + profit_lags)), year < y) %>%
       group_by(year) %>%
       summarise(profits = sum(profits))
-
   new_effort <-
       max(0, last_effort + fleet$theta * mean(profits$profits)) * exp(effort_devs[y + 1])
   }

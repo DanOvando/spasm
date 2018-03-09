@@ -19,6 +19,8 @@
 #' @param target_catch
 #' @param catches
 #' @param sigma_effort
+#' @param profit_lags
+#' @param theta_tuner
 #'
 #' @return a fleet object
 #' @export
@@ -42,7 +44,9 @@ create_fleet <- function(eq_f = NA,
                          initial_effort = 100,
                          target_catch = 0,
                          catches = NA,
-                         sigma_effort = 0) {
+                         sigma_effort = 0,
+                         profit_lags = 4,
+                         theta_tuner = 0.25) {
 
   p_selected <- function(mu, sigma, l50, delta){
 
@@ -85,6 +89,8 @@ create_fleet <- function(eq_f = NA,
     cost_function = cost_function,
     cost_slope = cost_slope,
     tech_rate = tech_rate,
-    sigma_effort = sigma_effort
+    sigma_effort = sigma_effort,
+    profit_lags = profit_lags,
+    theta_tuner = 0.25
   )
 }
