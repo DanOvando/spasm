@@ -218,6 +218,11 @@ sim_fishery <-
 
            new_theta <- (effort[y-1] *fleet$theta_tuner) / total_initial_profits
 
+           if (new_theta <=0){
+
+             stop("fishery is unprofitable at b0")
+           }
+
            fleet <- update_fleet(fleet = purrr::list_modify(fleet,theta = new_theta), fish = fish)
       }
 
