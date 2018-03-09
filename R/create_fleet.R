@@ -44,22 +44,33 @@ create_fleet <- function(eq_f = NA,
                          catches = NA,
                          sigma_effort = 0) {
 
+  p_selected <- function(mu, sigma, l50, delta){
+
+    length_dist <- pmax(0,rnorm(1000, mu, sigma))
+
+    sel_dist <-   ((1 / (1 + exp(-log(
+      19
+    ) * ((length_dist - l50) / (delta)
+    )))))
+
+    mean_p_selected <- mean(sel_dist)
+
+  }
+
+  sel_at_age <- data_frame(age = 0:fish$max_age) %>%
+    mutate(mean_length_at_age = fish$length_at_age) %>%
+    mutate(sd_at_age = mean_length_at_age * fish$cv_len) %>%
+    mutate(mean_sel_at_age = map2_dbl(mean_length_at_age, sd_at_age, p_selected, l50 = length_50_sel, delta = delta))
+
 
   length_95_sel <- (length_50_sel + delta)
 
-  age_50_sel <- (log(1 - length_50_sel / fish$linf) / -fish$vbk) + fish$t0
 
-  age_95_sel <- (log(1 - length_95_sel / fish$linf) / -fish$vbk) + fish$t0
-  sel_at_age <-
-  ((1 / (1 + exp(-log(
-    19
-  ) * ((seq(fish$min_age,fish$max_age, by = fish$time_step) - age_50_sel) / (age_95_sel - age_50_sel)
-  )))))
   fleet <- list(
     eq_f = eq_f,
     length_50_sel = length_50_sel,
     delta = delta,
-    sel_at_age = sel_at_age,
+    sel_at_age = sel_at_age$mean_sel_at_age,
     mpa_reaction = mpa_reaction,
     price = price,
     cost = cost,

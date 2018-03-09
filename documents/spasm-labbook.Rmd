@@ -1,6 +1,8 @@
 ---
-title: "SpASM"
-output: html_notebook
+title: "SPASM Labbook"
+author: "Dan Ovando"
+date: "3/8/2018"
+output: html_document
 ---
 
 ```{r}
@@ -1015,4 +1017,34 @@ sim %>%
 ```
 
 OK, looks like that works for all the basic functional forms, need to check on supplied catch sometime but that's a problem for another day. 
+
+# Fixing selectivity at age
+
+Right, so now one issue is that selectivity assumes that all fish of a certain age are exactly a certain length. 
+The problem then is when you sample from that, and then try and add "noise" and estimate F based on lengths, you're getting it wrong. So, you need to adjust the f at age by the mean selectivy at age, where that is based on the size distribution at a given age
+
+
+So, how to do that. For any age, you have a number of individuals and a mean length at age
+
+One option would be to just say simulate an arbitrary number of fish at a age, converting to lengths with appropriate noise, and then taking the mean selectivity of that bunch? 
+
+The advantage to that is you can actually still just do that in the create_fish object, since all it will do is scale the selectivity at age a bit. Is there a problem with that? It doesn't deal with the gtg thing, but let's shelve that particular problem for a moment. Since the problem there is that things that grow faster, if they are cohort specific, should be less likely to make it to old age, and so there should technically be less of the larger end of things at later age. i.e. what you really want to do is track cohorts of different growth parameters at the same age... but blah
+
+That's more than LIME does, so good enough for me right now. 
+
+
+```{r}
+fish <- update_fish(purrr::update_list(fish, cv_len = 0.25))
+fleet <- create_fleet(fish = fish, length_50_sel = 50)
+
+fleet$sel_at_age %>% plot()
+
+```
+
+
+
+
+
+
+
 

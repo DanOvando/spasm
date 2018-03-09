@@ -205,23 +205,51 @@ create_fish <- function(common_name = 'white seabass',
 
     age_95_mature <-  age_50_mature + delta_mature
 
+    fish$maturity_at_age <-
+      ((1 / (1 + exp(-log(
+        19
+      ) * ((seq(min_age,max_age, by = time_step) - age_50_mature) / (age_95_mature - age_50_mature)
+      )))))
+
   } else if (is.na(age_mature)) {
     if (is.na(length_mature)) {
       length_mature <-  linf * lmat_to_linf_ratio
     }
 
-    age_mature <- (log(1 - length_mature / linf) / -vbk) + t0
+    p_selected <- function(mu, sigma, l50, delta){
+
+      length_dist <- pmax(0,rnorm(1000, mu, sigma))
+
+      sel_dist <-   ((1 / (1 + exp(-log(
+        19
+      ) * ((length_dist - l50) / (delta)
+      )))))
+
+      mean_p_selected <- mean(sel_dist)
+
+    }
+mat_at_age <- data_frame(age = 0:max_age) %>%
+  mutate(mean_length_at_age = fish$length_at_age) %>%
+  mutate(sd_at_age = mean_length_at_age * cv_len) %>%
+  mutate(
+    mean_mat_at_age = map2_dbl(
+      mean_length_at_age,
+      sd_at_age,
+      p_selected,
+      l50 = length_mature,
+      delta = delta_mature
+    )
+  )
+
+    age_mature <- mat_at_age$age[mat_at_age$mean_mat_at_age >= 0.5][1]
 
     age_50_mature <- age_mature
 
-    age_95_mature <- 1.01 * age_50_mature
+    age_95_mature <-  mat_at_age$age[mat_at_age$mean_mat_at_age >= 0.95][1]
+
+    fish$maturity_at_age <- mat_at_age$mean_mat_at_age
   }
 
-  fish$maturity_at_age <-
-    ((1 / (1 + exp(-log(
-      19
-    ) * ((seq(min_age,max_age, by = time_step) - age_50_mature) / (age_95_mature - age_50_mature)
-    )))))
 
   if (is.na(length_50_mature)){
 
