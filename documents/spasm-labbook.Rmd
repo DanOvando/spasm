@@ -1042,8 +1042,100 @@ fleet$sel_at_age %>% plot()
 ```
 
 
+OK, moved from fishbase to fishlife, let's test
 
 
+```{r}
+
+fish <- create_fish(query_fishlife = T, mat_mode = "length")
+
+fleet <- create_fleet(fish = fish)
+
+fleet <-
+  spasm::update_fleet(
+  fleet = purrr::list_modify(
+  fleet,
+  fleet_model = "open-access",
+  initial_effort = 1,
+  theta = 0.01,
+  cost = 2,
+  price = 1,
+  target_catch = 100,
+  sigma_effort = 0.1
+  ),
+  fish = fish
+  )
+
+sim <- spasm::sim_fishery(fish = fish,
+                   fleet = fleet, 
+                   manager = manager,
+                   num_patches = 1,
+                   sim_years = 100,
+                   burn_year = 50)
+
+sim %>% 
+  group_by(year) %>% 
+  summarise(ssb = sum(ssb)) %>% 
+  ggplot(aes(year, ssb)) + 
+  geom_line() + 
+  geom_point()
+
+
+```
+
+
+Great! that works now, makes life history less messy at least. 
+
+Reminder: as a scenario to test, pass the actual catch histories from the channel islands and see how that works. 
+
+Now, let's check on sampling lengths
+
+
+```{r}
+
+  length_and_age_comps <- sim %>%
+    select(year,patch,age, numbers, numbers_caught) %>%
+    nest(-year,-patch, .key = n_at_age)
+
+  length_and_age_comps <- length_and_age_comps %>%
+    mutate(pop_length = map(n_at_age, ~sample_lengths(n_at_age = .x,
+                                                      cv = fish$cv_len,
+                                                      k = fish$vbk,
+                                                      linf = fish$linf,
+                                                      t0 = fish$t0,
+                                                      sample_type = 'catch',
+                                                      percent_sampled = 1,
+                                                      time_step = fish$time_step)))
+  
+    length_and_age_comps <- length_and_age_comps %>%
+    mutate(pop_ages = map(pop_length, ~length_to_age(length_samples = .x,
+                                                     cv = fish$cv_len,
+                                                     k = fish$vbk,
+                                                     linf = fish$linf,
+                                                     t0 = fish$t0,
+                                                     max_age = fish$max_age,
+                                                     min_age = fish$min_age,
+                                                     time_step = fish$time_step)))
+    
+    sampled <- length_and_age_comps$pop_ages[[50]] %>% 
+      mutate(source = "sampled")
+    
+    true <- length_and_age_comps$n_at_age[[50]]  %>% 
+      select(age, numbers) %>% 
+      mutate(source = "true")
+    
+    sampled %>% 
+      bind_rows(true) %>% 
+      group_by(source) %>% 
+      mutate(numbers = numbers / sum(numbers)) %>% 
+      ungroup() %>% 
+      ggplot(aes(age, numbers, fill = source)) + 
+      geom_density(stat = "identity", alpha = 0.5)
+    
+
+```
+
+Sweet, that actually works pretty damn well! fairly shocked by that honestly. So, you might be ready to go. and get started model fitting tomorrow. 
 
 
 

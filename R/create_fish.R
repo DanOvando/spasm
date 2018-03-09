@@ -1,4 +1,6 @@
-#' create_fish creates a fish list object with all the life history goodies
+#' create_fish
+#'
+#' creates a fish list object with all the life history goodies
 #'
 #' @param common_name
 #' @param scientific_name
@@ -19,8 +21,7 @@
 #' @param density_dependence_form
 #' @param adult_movement
 #' @param larval_movement
-#' @param query_fishbase
-#' @param lmat_to_linf_ratio
+#' @param query_fishlife
 #' @param r0
 #' @param cv_len
 #' @param length_units
@@ -28,25 +29,26 @@
 #' @param time_step
 #' @param weight_units
 #' @param delta_mature
-#' @param lhi_type
 #' @param price
 #' @param sigma_r
 #' @param rec_ac
+#' @param cores
+#' @param mat_mode
 #'
 #' @return a fish list object
 #' @export
 #'
-#' @examples white_seabass = create_fish(scientific_name = "Atractoscion nobilis")
+#' @examples white_seabass = create_fish(scientific_name = "Atractoscion nobilis", query_fishlife = T)
 #'
 create_fish <- function(common_name = 'white seabass',
                         scientific_name = "Atractoscion nobilis",
                         linf = NA,
                         vbk = NA,
-                        t0 = 0,
+                        t0 = -0.1,
                         cv_len = 0.1,
                         length_units = 'cm',
                         min_age = 0,
-                        max_age = 20,
+                        max_age = NA,
                         time_step = 1,
                         weight_a = NA,
                         weight_b = NA,
@@ -58,133 +60,163 @@ create_fish <- function(common_name = 'white seabass',
                         age_95_mature = NA,
                         age_mature = NA,
                         length_mature = NA,
-                        m = 0.2,
+                        m = NA,
                         steepness = 0.8,
                         r0 = 10000,
                         density_dependence_form = 1,
                         adult_movement = 2,
                         larval_movement = 2,
-                        query_fishbase = F,
-                        lhi_type = 1,
-                        lmat_to_linf_ratio = NA,
+                        query_fishlife = T,
                         price = 1,
                         sigma_r = 0,
-                        rec_ac = 0) {
+                        rec_ac = 0,
+                        cores = 4,
+                        mat_mode = "age") {
 
-  lhi_groups <- lhi %>%
-    group_by(type) %>%
-    summarise(mean_m_v_k = mean(m_v_k, na.rm = T),
-              mean_lmat_v_linf = mean(lmat_v_linf, na.rm = T),
-              mean_m_by_tm = mean(m_times_tmat, na.rm = T),
-              mean_wa = mean(lw_a, na.rm = T),
-              mean_wb = mean(lw_b, na.rm = T))
+  # lhi_groups <- lhi %>%
+  #   group_by(type) %>%
+  #   summarise(mean_m_v_k = mean(m_v_k, na.rm = T),
+  #             mean_lmat_v_linf = mean(lmat_v_linf, na.rm = T),
+  #             mean_m_by_tm = mean(m_times_tmat, na.rm = T),
+  #             mean_wa = mean(lw_a, na.rm = T),
+  #             mean_wb = mean(lw_b, na.rm = T))
 
   fish <- list()
   # check fishbase -------------
-  if (is.na(scientific_name) == F & query_fishbase == T) {
-    # scientific_name <- tolower(scientific_name)
+  if (is.na(scientific_name) == F & query_fishlife == T) {
 
-    taxonomy <-
-      str_split(scientific_name, pattern = ' ', simplify = T) %>%
+
+    genus_species <- stringr::str_split(scientific_name, " ", simplify = T) %>%
       as_data_frame() %>%
-      setNames(c('genus', 'species')) %>%
-      mutate(sci_name = paste(genus, species))
+      set_names(c("genus", "species"))
 
-    fishbase_matches <- fishbase %>%
-      setNames(nm = tolower(colnames(.))) %>%
-      mutate(genus = (genus),
-             species = (species)) %>%
-      mutate(
-        genus_match = str_detect(genus, taxonomy$genus),
-        species_match = str_detect(species, taxonomy$species),
-        complete_match = genus_match == T & species_match == T,
-        full_name = paste(genus, species)
-      ) %>%
-      filter(genus_match == T)
+    get_fish_life <- function(genus, species) {
+      Predict = Plot_taxa(
+        Search_species(Genus = genus, Species = species)$match_taxonomy,
+        mfrow = c(2, 2),
+        partial_match = T,
+        verbose = F
+      )
+      out <- Predict[[1]]$Mean_pred %>%
+        as.matrix() %>%
+        t() %>%
+        as.data.frame()
 
-    if (any(fishbase_matches$complete_match) == T) {
-      fishbase_matches <- fishbase_matches %>%
-        filter(complete_match == T)
+      out[colnames(out) != 'Temperature'] <-
+        exp(out[colnames(out) != 'Temperature'])
 
-    }
-
-    fb_life_history <- popgrowth(fishbase_matches$full_name,
-                                 fields = c('Loo', 'K', 'to', 'M'))
-    if (dim(fb_life_history)[1] == 0){
-
-      fb_life_history <-  data_frame(Loo = NA, K = NA, to = NA, M = NA)
+      return(out)
 
     }
 
-    fb_life_history <- fb_life_history %>%
-      # group_by(sciname) %>%
-      summarise(Loo = median(Loo),
-                K = median(K),
-                to = median(to),
-                M = median(M))
 
+    fish_life <- genus_species %>%
+      mutate(life_traits = map2(genus, species, safely(get_fish_life)))
 
-    # a= poplw(fishbase_matches$full_name)
-    fb_length_weight <-
-      poplw(fishbase_matches$full_name, fields = c('a', 'b'))
+    fish_life <- fish_life %>%
+      mutate(fish_life_worked = map(life_traits, 'error') %>% map_lgl(is.null)) %>%
+      filter(fish_life_worked) %>%
+      mutate(life_traits = map(life_traits, 'result')) %>%
+      unnest() %>%
+      mutate(taxa = glue::glue('{genus} {species}')) %>%
+      set_names(tolower)
 
-    if (dim(fb_length_weight)[1] == 0){
-
-      fb_length_weight <-  data_frame(a = NA, b = NA)
-
+    if (weight_units == "kg"){
+      fish_life$winfinity <- fish_life$winfinity / 1000
     }
 
-    fb_length_weight <- fb_length_weight %>%
-      summarise(a = median(a),
-                b = median(b),
-                a = a / 1000)
+    weight_stan <- "
+   data {
+    real winf;
+    real linf;
+  }
+    parameters {
+    real<lower = 0> wa;
+    real<lower = 2.7, upper = 3.2> wb;
+    real<lower = 0, upper = 1> sigma;
+    }
+    transformed parameters{
+    real w_hat;
+    w_hat = wa*linf^wb;
 
-    # fb_length_weight$a <-  fb_length_weight$a / 1000 # convert to kg
+    }
+    model {
+    winf ~ normal(w_hat, sigma);
+    wb ~ normal(3,.1);
+    }
+    "
 
+    weight_fit <-
+      stan(
+        model_code = weight_stan,
+        data = list(winf = fish_life$winfinity*2, linf = fish_life$loo),
+        verbose = F,
+        cores = cores
+      )
 
+    weight_fit <- broom::tidy(weight_fit) %>%
+      select(term, estimate) %>%
+      spread(term, estimate)
   # process lengths ---------------------------------------------------------
 
   if (is.na(linf)) {
-    linf <- fb_life_history$Loo
+    linf <- fish_life$loo
   }
 
   if (is.na(vbk)) {
-    vbk <- fb_life_history$K
-
-  }
-  if (is.na(t0)) {
-    t0 <- fb_life_history$to
+    vbk <- fish_life$k
 
   }
 
     if (is.na(weight_a)) {
-      weight_a <- fb_length_weight$a
+      weight_a <- weight_fit$wa
 
     }
     if (is.na(weight_b)) {
-      weight_b <- fb_length_weight$b
+      weight_b <- weight_fit$wb
 
     }
 
-} #close fishbase query
+    if (is.na(max_age)){
 
-  # if (any(c(is.na(linf), is.na(vbk), is.na(t0)))) {
-  #   warning("Not enough Von Bert Data")
+      max_age <- fish_life$tmax
+
+    }
+
+    if (is.na(age_mature)){
+
+      age_mature <- fish_life$tm
+
+    }
+
+    if (is.na(length_mature)){
+
+      length_mature <- fish_life$lm
+
+    }
+
+    if (is.na(m)){
+
+      m <- fish_life$m
+
+    }
+
+} #close fishlife query
+
+  # max_age <- ((-log(0.01)/m)) %>% floor()
+
+  # if (is.na(vbk)){
+  #
+  #   vbk <- m / (lhi_groups$mean_m_v_k[lhi_groups$type == lhi_type])
+  #
   # }
-  max_age <- ((-log(0.01)/m)) %>% floor()
-
-  if (is.na(vbk)){
-
-    vbk <- m / (lhi_groups$mean_m_v_k[lhi_groups$type == lhi_type])
-
-  }
-  if (is.na(weight_a)){
-
-    weight_a <-lhi_groups$mean_wa[lhi_groups$type == lhi_type]
-
-    weight_b <-lhi_groups$mean_wb[lhi_groups$type == lhi_type]
-
-  }
+  # if (is.na(weight_a)){
+  #
+  #   weight_a <-lhi_groups$mean_wa[lhi_groups$type == lhi_type]
+  #
+  #   weight_b <-lhi_groups$mean_wb[lhi_groups$type == lhi_type]
+  #
+  # }
 
   fish$length_at_age <- linf * (1 - exp(-vbk * (seq(min_age,max_age, by = time_step) - t0)))
 
@@ -192,11 +224,7 @@ create_fish <- function(common_name = 'white seabass',
 
   fish$weight_at_age <- weight_a * fish$length_at_age ^ weight_b
 
- if (is.na(lmat_to_linf_ratio)) {
-
-   lmat_to_linf_ratio <- lhi_groups$mean_lmat_v_linf[lhi_groups$type == lhi_type]
-
- }
+   lmat_to_linf_ratio <- length_mature / linf
 
   # process maturity
   if ((is.na(age_50_mature) |
@@ -211,7 +239,7 @@ create_fish <- function(common_name = 'white seabass',
       ) * ((seq(min_age,max_age, by = time_step) - age_50_mature) / (age_95_mature - age_50_mature)
       )))))
 
-  } else if (is.na(age_mature)) {
+  } else if (is.na(age_mature) | mat_mode == "length") {
     if (is.na(length_mature)) {
       length_mature <-  linf * lmat_to_linf_ratio
     }
