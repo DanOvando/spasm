@@ -18,11 +18,33 @@ length_to_age <-
            t0,
            max_age,
            min_age = 0,
-           time_step = 1) {
-    # lengths <- length_samples %>% {
-    #   map2(.$length_bin, .$numbers, ~ rep(.x, .y))
-    # } %>%
-    #   unlist()
+           time_step = 1,
+           aging_method = "vbk") {
+
+    if (aging_method == "vbk"){
+
+      age_comp <- length_samples %>%
+        mutate(next_bin = lead(length_bin)) %>%
+        mutate(mid_bin = map2_dbl(length_bin, next_bin, ~mean(c(.x,.y), na.rm = T))) %>%
+        mutate(expected_age = (log(1 - pmin(0.99*linf,mid_bin) / linf) / -k) - t0) %>%
+        mutate(rounded_age = plyr::round_any(expected_age, fish$time_step, f = floor)) %>%
+        group_by(rounded_age) %>%
+        summarise(numbers = sum(numbers)) %>%
+        rename(age = rounded_age)
+
+      blank_ages <- data_frame(age = seq(fish$min_age, fish$max_age, by = fish$time_step), blanks = 0)
+
+      age_comp <- age_comp %>%
+        right_join(blank_ages, by = "age") %>%
+        ungroup() %>%
+        mutate(numbers = ifelse(is.na(numbers), 0 , numbers)) %>%
+        select(-blanks)
+
+
+    } else if (aging_method == "key") {
+
+
+      warning("aging by key DOES NOT work correctly right now")
 
     mean_length_at_age <-
       linf * (1 - exp(-k * (seq(
@@ -61,8 +83,7 @@ length_to_age <-
       group_by(length_bin) %>%
       mutate(p_age_at_length = p_bin / sum(p_bin, na.rm = T))
 
-    p_length_at_age$p_age_at_length[is.na(p_length_at_age$p_age_at_length)] <-
-      0
+    p_length_at_age$p_age_at_length[is.na(p_length_at_age$p_age_at_length)] <- 0
 
     # p_length_at_age %>%
     #   ggplot(aes(age, p_age_at_length)) +
@@ -93,18 +114,8 @@ length_to_age <-
       summarise(numbers = sum(numbers, na.rm = T)) %>%
       mutate(age = age)
 
-    # age_comp <- lengths_to_ages %>%
-    #   nest(-length_bin) %>%
-    #   mutate(numbers = map(data,  ~ data_frame(
-    #     age = .x$age,
-    #     numbers = (.x$numbers * .x$p_age_at_length) %>% as.numeric()
-    #     # numbers = rmultinom(1, unique(.x$samples), .x$p_age_at_length) %>% as.numeric()
-    #   ))) %>%
-    #   select(numbers) %>%
-    #   unnest() %>%
-    #   group_by(age) %>%
-    #   summarise(numbers = sum(numbers, na.rm = T)) %>%
-    #   mutate(age = age)
+    }
+
 
     return(age_comp)
 

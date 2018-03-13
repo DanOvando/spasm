@@ -5,7 +5,6 @@
 #' @param delta cm above length50 at 95 selectivity
 #' @param mpa_reaction
 #' @param fish
-#' @param price
 #' @param cost
 #' @param beta
 #' @param theta
@@ -21,6 +20,10 @@
 #' @param sigma_effort
 #' @param profit_lags
 #' @param theta_tuner
+#' @param q_cv
+#' @param q_ac
+#' @param cost_cv
+#' @param cost_ac
 #'
 #' @return a fleet object
 #' @export
@@ -31,11 +34,14 @@ create_fleet <- function(eq_f = NA,
                          delta = 2,
                          fish,
                          mpa_reaction = 'concentrate',
-                         price = 1,
                          cost = .1,
                          beta = 1.3,
                          theta = 1e-1,
                          q = 1e-3,
+                         q_cv = 0,
+                         q_ac = 0,
+                         cost_cv = 0,
+                         cost_ac = 0,
                          fleet_model = 'constant-effort',
                          effort_allocation = 'gravity',
                          cost_function = 'constant',
@@ -47,10 +53,8 @@ create_fleet <- function(eq_f = NA,
                          sigma_effort = 0,
                          profit_lags = 4,
                          theta_tuner = 0.25) {
-
-  p_selected <- function(mu, sigma, l50, delta){
-
-    length_dist <- pmax(0,rnorm(1000, mu, sigma))
+  p_selected <- function(mu, sigma, l50, delta) {
+    length_dist <- pmax(0, rnorm(1000, mu, sigma))
 
     sel_dist <-   ((1 / (1 + exp(-log(
       19
@@ -61,36 +65,30 @@ create_fleet <- function(eq_f = NA,
 
   }
 
-  sel_at_age <- data_frame(age = 0:fish$max_age) %>%
+  sel_at_age <-
+    data_frame(age = seq(fish$min_age, fish$max_age, by = fish$time_step)) %>%
     mutate(mean_length_at_age = fish$length_at_age) %>%
     mutate(sd_at_age = mean_length_at_age * fish$cv_len) %>%
-    mutate(mean_sel_at_age = map2_dbl(mean_length_at_age, sd_at_age, p_selected, l50 = length_50_sel, delta = delta))
+    mutate(
+      mean_sel_at_age = map2_dbl(
+        mean_length_at_age,
+        sd_at_age,
+        p_selected,
+        l50 = length_50_sel,
+        delta = delta
+      )
+    )
 
 
   length_95_sel <- (length_50_sel + delta)
 
+  sel_at_age <-  sel_at_age$mean_sel_at_age
 
-  fleet <- list(
-    eq_f = eq_f,
-    length_50_sel = length_50_sel,
-    delta = delta,
-    sel_at_age = sel_at_age$mean_sel_at_age,
-    mpa_reaction = mpa_reaction,
-    price = price,
-    cost = cost,
-    beta = beta,
-    theta = theta,
-    q = q,
-    fleet_model = fleet_model,
-    effort_allocation = effort_allocation,
-    initial_effort = initial_effort,
-    target_catch = target_catch,
-    catches = catches,
-    cost_function = cost_function,
-    cost_slope = cost_slope,
-    tech_rate = tech_rate,
-    sigma_effort = sigma_effort,
-    profit_lags = profit_lags,
-    theta_tuner = 0.25
-  )
+  rm(fish)
+
+  fleet <- list(mget(ls()))
+
+  fleet <- fleet[[1]]
+
+  return(fleet)
 }

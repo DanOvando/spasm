@@ -13,7 +13,9 @@ Imports: tidyverse,
     readr,
     modelr,
     Rcpp,
-    RcppEigen
+    RcppEigen,
+    rstan,
+    FishLife
 Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr

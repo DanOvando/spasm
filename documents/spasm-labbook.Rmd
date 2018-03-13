@@ -1169,6 +1169,127 @@ assessments <- length_comps %>%
 
 ```
 
+# Fixing length and age sampling
+
+OK, there's still something wrong with the way you're sampling lengths. No moving on until under perfect circumstances you can perfectly reproduce the true age structure. 
+
+
+Right off the bat the problem looks obvious: you're not correctly disouncting the probability of being in a given age by the chance of actually living to that age, and so the sampes are filling things out to arbitrary max ages
+
+```{r}
+library(rstan)
+library(FishLife)
+library(spasm)
+library(tidyverse)
+
+fish <- create_fish(query_fishlife = T, mat_mode = "length", max_age = 100, time_step = 0.25)
+
+fleet <- create_fleet(fish = fish)
+
+manager <- create_manager(mpa_size = 0)
+
+fleet <-
+  spasm::update_fleet(
+  fleet = purrr::list_modify(
+  fleet,
+  fleet_model = "open-access",
+  initial_effort = 1,
+  theta = 0.01,
+  cost = 30,
+  price = 1,
+  target_catch = 100,
+  sigma_effort = 0,
+  length_50_sel = 0,
+  theta_tuner = 0.5
+  ),
+  fish = fish
+  )
+
+sim <- spasm::sim_fishery(fish = fish,
+                   fleet = fleet, 
+                   manager = manager,
+                   num_patches = 1,
+                   sim_years = 100,
+                   burn_year = 50,
+                   time_step = fish$time_step)
+
+sim %>% 
+  group_by(year) %>% 
+  summarise(ssb = sum(effort)) %>% 
+  ggplot(aes(year, ssb)) + 
+  geom_line() + 
+  geom_point()
+
+ length_and_age_comps <- sim %>%
+    select(year,patch,age, numbers, numbers_caught) %>%
+    nest(-year,-patch, .key = n_at_age) %>% 
+   filter(year == max(year))
+
+  length_and_age_comps <- length_and_age_comps %>%
+    mutate(catch_length = map(n_at_age, ~sample_lengths(n_at_age = .x,
+                                                      cv = fish$cv_len,
+                                                      k = fish$vbk,
+                                                      linf = fish$linf,
+                                                      t0 = fish$t0,
+                                                      sample_type = 'population',
+                                                      percent_sampled = 1,
+                                                      time_step = fish$time_step)))
+  
+    length_and_age_comps <- length_and_age_comps %>%
+    mutate(catch_ages = map(catch_length, ~length_to_age(length_samples = .x,
+                                                     cv = fish$cv_len,
+                                                     k = fish$vbk,
+                                                     linf = fish$linf,
+                                                     t0 = fish$t0,
+                                                     max_age = fish$max_age,
+                                                     min_age = fish$min_age,
+                                                     time_step = fish$time_step)))
+    
+check_ages <- length_and_age_comps %>% 
+  select(year, patch, n_at_age, catch_ages) %>% 
+  unnest() %>% 
+  select(-age1, -numbers_caught) %>% 
+  rename(sampled_catch_numbers = numbers1) %>% 
+  gather(source, numbers, contains("numbers")) %>% 
+  group_by(year, source) %>% 
+  mutate(snumbers = numbers /sum(numbers)) %>% 
+  ungroup() %>% 
+    filter(year == max(year))
+
+
+wtf <- check_ages %>% 
+  select(-snumbers) %>% 
+  spread(source, numbers)
+
+a = check_ages %>% 
+  mutate(ln = log(numbers)) %>% 
+  filter(numbers >= 1) %>% 
+  ggplot(aes(age, ln, fill = source)) + 
+  geom_col(stat = "identity", alpha = 0.5, position = "dodge")
+
+a
+
+
+length_and_age_comps %>% 
+  filter(year == max(year)) %>% 
+  select(catch_length) %>% 
+  unnest() %>% 
+  filter(length_bin <150) %>% 
+  ggplot() +
+  geom_col(aes(length_bin, numbers)) +
+  geom_vline(xintercept = fish$linf) +
+  geom_vline(xintercept = fish$length_at_age)
+  
+
+```
+
+Looks like your length conversions are OK, so your problem is in then assigning those lengths to ages. 
+
+Oh, well duh, you're not accounting for probability of being in a given age along with length at age. 
+
+Now wait, are you making this waaaaay too complicated? Since you've introduced variation in the size at age, which is on average correct, why not just use VBK to transfer back to ages? It'll be a little off due to the smoothing, but not as bad as it is now. 
+
+Did that for now, and for now since you dont' need ages, since fuck catch curves at the moment, ignore the aging of the length samples until you can talk to someone about it. 
 
 
 

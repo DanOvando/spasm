@@ -5,7 +5,7 @@
 \title{length_to_age}
 \usage{
 length_to_age(length_samples, cv, k, linf, t0, max_age, min_age = 0,
-  time_step = 1)
+  time_step = 1, aging_method = "vbk")
 }
 \arguments{
 \item{max_age}{}

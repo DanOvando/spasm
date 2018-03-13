@@ -34,6 +34,8 @@
 #' @param rec_ac
 #' @param cores
 #' @param mat_mode
+#' @param price_ac
+#' @param price_cv
 #'
 #' @return a fish list object
 #' @export
@@ -68,18 +70,13 @@ create_fish <- function(common_name = 'white seabass',
                         larval_movement = 2,
                         query_fishlife = T,
                         price = 1,
+                        price_cv = 0,
+                        price_ac = 0,
                         sigma_r = 0,
                         rec_ac = 0,
                         cores = 4,
                         mat_mode = "age") {
 
-  # lhi_groups <- lhi %>%
-  #   group_by(type) %>%
-  #   summarise(mean_m_v_k = mean(m_v_k, na.rm = T),
-  #             mean_lmat_v_linf = mean(lmat_v_linf, na.rm = T),
-  #             mean_m_by_tm = mean(m_times_tmat, na.rm = T),
-  #             mean_wa = mean(lw_a, na.rm = T),
-  #             mean_wb = mean(lw_b, na.rm = T))
 
   fish <- list()
   # check fishbase -------------
@@ -218,13 +215,13 @@ create_fish <- function(common_name = 'white seabass',
   #
   # }
 
-  fish$length_at_age <- linf * (1 - exp(-vbk * (seq(min_age,max_age, by = time_step) - t0)))
+  length_at_age <- linf * (1 - exp(-vbk * (seq(min_age,max_age, by = time_step) - t0)))
 
   # process weight
 
-  fish$weight_at_age <- weight_a * fish$length_at_age ^ weight_b
+  weight_at_age <- weight_a * length_at_age ^ weight_b
 
-   lmat_to_linf_ratio <- length_mature / linf
+  lmat_to_linf_ratio <- length_mature / linf
 
   # process maturity
   if ((is.na(age_50_mature) |
@@ -233,7 +230,7 @@ create_fish <- function(common_name = 'white seabass',
 
     age_95_mature <-  age_50_mature + delta_mature
 
-    fish$maturity_at_age <-
+    maturity_at_age <-
       ((1 / (1 + exp(-log(
         19
       ) * ((seq(min_age,max_age, by = time_step) - age_50_mature) / (age_95_mature - age_50_mature)
@@ -256,8 +253,9 @@ create_fish <- function(common_name = 'white seabass',
       mean_p_selected <- mean(sel_dist)
 
     }
+
 mat_at_age <- data_frame(age = 0:max_age) %>%
-  mutate(mean_length_at_age = fish$length_at_age) %>%
+  mutate(mean_length_at_age = length_at_age) %>%
   mutate(sd_at_age = mean_length_at_age * cv_len) %>%
   mutate(
     mean_mat_at_age = map2_dbl(
@@ -275,7 +273,7 @@ mat_at_age <- data_frame(age = 0:max_age) %>%
 
     age_95_mature <-  mat_at_age$age[mat_at_age$mean_mat_at_age >= 0.95][1]
 
-    fish$maturity_at_age <- mat_at_age$mean_mat_at_age
+    maturity_at_age <- mat_at_age$mean_mat_at_age
   }
 
 
@@ -287,37 +285,45 @@ mat_at_age <- data_frame(age = 0:max_age) %>%
 
   }
 
-  fish$scientific_name <- scientific_name
-  fish$common_name <- common_name
-  fish$ssb_at_age <- fish$maturity_at_age * fish$weight_at_age
-  fish$linf <- linf
-  fish$vbk  <-  vbk
-  fish$t0 <-  t0
-  fish$cv_len <- cv_len
-  fish$max_age <-  max_age
-  fish$min_age <- min_age
-  fish$weight_a <-  weight_a
-  fish$weight_b <-  weight_b
-  fish$length_50_mature <-  length_50_mature
-  fish$length_95_mature <-  length_95_mature
-  fish$age_50_mature <-  age_50_mature
-  fish$age_95_mature <-  age_95_mature
-  fish$delta_mature <- delta_mature
-  fish$age_mature <-  age_mature
-  fish$length_mature <-  length_mature
-  fish$m <-  m
-  fish$steepness <- steepness
-  fish$r0 <- r0
-  fish$density_dependence_form = density_dependence_form
-  fish$adult_movement <-  adult_movement
-  fish$larval_movement <-  larval_movement
-  fish$lmat_to_linf_ratio <-  lmat_to_linf_ratio
-  fish$length_units <-  length_units
-  fish$weight_units <-  weight_units
-  fish$price <- price
-  fish$sigma_r <- sigma_r
-  fish$rec_ac <- rec_ac
-  fish$time_step <- time_step
+
+   ssb_at_age <-  maturity_at_age * weight_at_age
+
+   fish <- list(mget(ls()))
+
+   fish <- fish[[1]]
+
+  #
+  # fish$scientific_name <- scientific_name
+  # fish$common_name <- common_name
+  # fish$ssb_at_age <- fish$maturity_at_age * fish$weight_at_age
+  # fish$linf <- linf
+  # fish$vbk  <-  vbk
+  # fish$t0 <-  t0
+  # fish$cv_len <- cv_len
+  # fish$max_age <-  max_age
+  # fish$min_age <- min_age
+  # fish$weight_a <-  weight_a
+  # fish$weight_b <-  weight_b
+  # fish$length_50_mature <-  length_50_mature
+  # fish$length_95_mature <-  length_95_mature
+  # fish$age_50_mature <-  age_50_mature
+  # fish$age_95_mature <-  age_95_mature
+  # fish$delta_mature <- delta_mature
+  # fish$age_mature <-  age_mature
+  # fish$length_mature <-  length_mature
+  # fish$m <-  m
+  # fish$steepness <- steepness
+  # fish$r0 <- r0
+  # fish$density_dependence_form = density_dependence_form
+  # fish$adult_movement <-  adult_movement
+  # fish$larval_movement <-  larval_movement
+  # fish$lmat_to_linf_ratio <-  lmat_to_linf_ratio
+  # fish$length_units <-  length_units
+  # fish$weight_units <-  weight_units
+  # fish$price <- price
+  # fish$sigma_r <- sigma_r
+  # fish$rec_ac <- rec_ac
+  # fish$time_step <- time_step
 
   return(fish)
 }

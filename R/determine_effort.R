@@ -71,7 +71,6 @@ determine_effort <-
 
 
   if (fleet$fleet_model == 'open-access') {
-
     profits <- pop %>%
       filter(year >= (y - (1 + profit_lags)), year < y) %>%
       group_by(year) %>%
