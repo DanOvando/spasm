@@ -22,6 +22,7 @@ sample_lengths <-
            percent_sampled = .1,
            sample_col = NA,
            linf_buffer = 10) {
+
     if (sample_type == 'catch') {
       sample_col <- quo(numbers_caught)
 
@@ -42,45 +43,27 @@ sample_lengths <-
       linf * (1 - exp(-k * (seq(
         min_age, max_age, by = time_step
       ) - t0)))
+
     p_n_at_age <- n_at_age %>%
       group_by(age) %>%
       summarise(numbers = sum(!!sample_col)) %>%
       ungroup() %>%
       mutate(p_sampled_at_age = numbers / sum(numbers))
 
-    length_at_age_vars <- data_frame(
-      age = seq(min_age, max_age, by = time_step),
-      mean_length_at_age = mean_length_at_age,
-      sigma_at_age = cv * mean_length_at_age
-    ) #calculate standard deviation of length at age for each age bin
-
-    # now calculate the probability of being in each length bin at each age
-    p_length_at_age <-
-      expand.grid(
-        age = seq(min_age, max_age, by = time_step),
-        length_bin = 0:(linf_buffer * linf)
-      ) %>%
-      as_data_frame() %>%
-      left_join(length_at_age_vars, by = 'age') %>%
-      arrange(age, length_bin)
-
-    p_length_at_age <- p_length_at_age %>%
-      group_by(age) %>%
-      mutate(next_length_bin = lead(length_bin, 1)) %>%
-      mutate(p_bin = ifelse(
-        is.na(next_length_bin) == F,
-        pnorm(next_length_bin, mean_length_at_age, sigma_at_age),
-        1
-      ) -
-        pnorm(length_bin, mean_length_at_age, sigma_at_age))
-
+    p_length_at_age <- generate_length_at_age_key(max_age = max_age,
+                                                  min_age = min_age,
+                                                  cv = cv,
+                                                  linf = linf,
+                                                  k = k,
+                                                  t0 = t0,
+                                                  time_step = time_step,
+                                                  linf_buffer = linf_buffer)
     p_length_at_age <- p_length_at_age %>%
       left_join(p_n_at_age, by = 'age')
 
     p_sampling_length_bin <- p_length_at_age %>%
       group_by(length_bin) %>%
       summarise(prob_sampled = sum(p_bin * p_sampled_at_age))
-
     if (length_comp_samples > 0) {
       length_comps <-
         rmultinom(1, size = length_comp_samples, prob = p_sampling_length_bin$prob_sampled) %>% as.numeric()

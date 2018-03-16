@@ -16,7 +16,7 @@ run_assessments <- function(fish, fleet, length_comps, true_f){
   true_spr <- approx_spr(fish = fish, fleet = fleet, mean_f)
 
   cc <-
-    run_catch_curve(fish = bad_fish, length_comps = length_comps)
+    run_catch_curve(fish = fish, length_comps = length_comps)
 
   cc_z <- -cc
 

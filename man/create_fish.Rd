@@ -2,29 +2,29 @@
 % Please edit documentation in R/create_fish.R
 \name{create_fish}
 \alias{create_fish}
-\title{create_fish creates a fish list object with all the life history goodies}
+\title{create_fish}
 \usage{
 create_fish(common_name = "white seabass",
-  scientific_name = "Atractoscion nobilis", linf = NA, vbk = NA, t0 = 0,
-  cv_len = 0.1, length_units = "cm", min_age = 0, max_age = 20,
-  time_step = 1, weight_a = NA, weight_b = NA, weight_units = "kg",
-  length_50_mature = NA, length_95_mature = NA, delta_mature = 0.1,
-  age_50_mature = NA, age_95_mature = NA, age_mature = NA,
-  length_mature = NA, m = 0.2, steepness = 0.8, r0 = 10000,
-  density_dependence_form = 1, adult_movement = 2, larval_movement = 2,
-  query_fishbase = F, lhi_type = 1, lmat_to_linf_ratio = NA, price = 1,
-  sigma_r = 0, rec_ac = 0)
+  scientific_name = "Atractoscion nobilis", linf = NA, vbk = NA,
+  t0 = -0.1, cv_len = 0.1, length_units = "cm", min_age = 0,
+  max_age = NA, time_step = 1, weight_a = NA, weight_b = NA,
+  weight_units = "kg", length_50_mature = NA, length_95_mature = NA,
+  delta_mature = 0.1, age_50_mature = NA, age_95_mature = NA,
+  age_mature = NA, length_mature = NA, m = NA, steepness = 0.8,
+  r0 = 10000, density_dependence_form = 1, adult_movement = 2,
+  larval_movement = 2, query_fishlife = T, price = 1, sigma_r = 0,
+  rec_ac = 0, cores = 4, mat_mode = "age")
 }
 \arguments{
-\item{rec_ac}{}
+\item{mat_mode}{}
 }
 \value{
 a fish list object
 }
 \description{
-create_fish creates a fish list object with all the life history goodies
+creates a fish list object with all the life history goodies
 }
 \examples{
-white_seabass = create_fish(scientific_name = "Atractoscion nobilis")
+white_seabass = create_fish(scientific_name = "Atractoscion nobilis", query_fishlife = T)
 
 }

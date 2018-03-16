@@ -1,7 +1,14 @@
 ---
-title: "SpASM"
-output: html_notebook
+title: "SPASM Labbook"
+author: "Dan Ovando"
+date: "3/8/2018"
+output: html_document
 ---
+
+```{r}
+knitr::opts_chunk$set(echo = F, eval = F)
+```
+
 
 This repo is an updated version of the GASP module developed for Ovando et al. 2016 Fish and Fisheries. 
 
@@ -939,4 +946,351 @@ THE CONCENSUS. lbspr is useless for estimating things from other operating model
 # Issues with aging
 
 There's a slight problem with the age conversions at large lengths. For very small growth increments, multiple age classess fall within one length bin, where a length bin is only 1cm. So, the numbers in that bin then get smoothed out over the ages. Not a big deal, but it's somethimg
+
+
+# scrooge support
+
+So what you're up to now is a) making sure that spasm still works and b) get the economic indicators up and running. Once you've done that, you can also revisit your length comp generation and sampling. Eventually I'd kind of like to add in the growth-type-groups thing 
+
+
+```{r}
+
+library(spasm)
+library(tidyverse)
+
+fish <- spasm::create_fish(linf = 100)
+
+fleet <- spasm::create_fleet(fish = fish)
+
+manager <- spasm::create_manager(mpa_size = 0)
+
+sim <- spasm::sim_fishery(fish = fish,
+                   fleet = fleet, 
+                   manager = manager,
+                   num_patches = 1,
+                   sim_years = 100,
+                   burn_year = 50)
+
+sim %>% 
+  group_by(year) %>% 
+  summarise(ssb = sum(effort)) %>% 
+  ggplot(aes(year, ssb)) + 
+  geom_line() + 
+  geom_point()
+
+```
+
+sweet, that thing still works and looks about right. 
+
+Now let's see if open access as it is currently defined still works
+
+
+```{r}
+
+fleet <-
+  spasm::update_fleet(
+  fleet = purrr::list_modify(
+  fleet,
+  fleet_model = "open-access",
+  theta = 0.025,
+  cost = 1,
+  target_catch = 100,
+  sigma_effort = 1
+  ),
+  fish = fish
+  )
+
+sim <- spasm::sim_fishery(fish = fish,
+                   fleet = fleet, 
+                   manager = manager,
+                   num_patches = 1,
+                   sim_years = 20,
+                   burn_year = 10)
+
+sim %>% 
+  group_by(year) %>% 
+  summarise(ssb = sum(biomass)) %>% 
+  ggplot(aes(year, ssb)) + 
+  geom_line() + 
+  geom_point()
+
+```
+
+OK, looks like that works for all the basic functional forms, need to check on supplied catch sometime but that's a problem for another day. 
+
+# Fixing selectivity at age
+
+Right, so now one issue is that selectivity assumes that all fish of a certain age are exactly a certain length. 
+The problem then is when you sample from that, and then try and add "noise" and estimate F based on lengths, you're getting it wrong. So, you need to adjust the f at age by the mean selectivy at age, where that is based on the size distribution at a given age
+
+
+So, how to do that. For any age, you have a number of individuals and a mean length at age
+
+One option would be to just say simulate an arbitrary number of fish at a age, converting to lengths with appropriate noise, and then taking the mean selectivity of that bunch? 
+
+The advantage to that is you can actually still just do that in the create_fish object, since all it will do is scale the selectivity at age a bit. Is there a problem with that? It doesn't deal with the gtg thing, but let's shelve that particular problem for a moment. Since the problem there is that things that grow faster, if they are cohort specific, should be less likely to make it to old age, and so there should technically be less of the larger end of things at later age. i.e. what you really want to do is track cohorts of different growth parameters at the same age... but blah
+
+That's more than LIME does, so good enough for me right now. 
+
+
+```{r}
+fish <- update_fish(purrr::update_list(fish, cv_len = 0.25))
+fleet <- create_fleet(fish = fish, length_50_sel = 50)
+
+fleet$sel_at_age %>% plot()
+
+```
+
+
+OK, moved from fishbase to fishlife, let's test
+
+
+```{r}
+
+library(rstan)
+library(FishLife)
+library(spasm)
+library(tidyverse)
+
+fish <- create_fish(query_fishlife = T, mat_mode = "length")
+
+fleet <- create_fleet(fish = fish)
+
+manager <- create_manager(mpa_size = 0)
+
+fleet <-
+  spasm::update_fleet(
+  fleet = purrr::list_modify(
+  fleet,
+  fleet_model = "open-access",
+  initial_effort = 10,
+  theta = 0.01,
+  cost = 20,
+  price = 1,
+  target_catch = 100,
+  sigma_effort = 0.1,
+  length_50_sel = 50,
+  theta_tuner = 0.1
+  ),
+  fish = fish
+  )
+
+sim <- spasm::sim_fishery(fish = fish,
+                   fleet = fleet, 
+                   manager = manager,
+                   num_patches = 1,
+                   sim_years = 100,
+                   burn_year = 50)
+
+sim %>% 
+  group_by(year) %>% 
+  summarise(ssb = sum(profits)) %>% 
+  ggplot(aes(year, ssb)) + 
+  geom_line() + 
+  geom_point()
+
+
+```
+
+
+Great! that works now, makes life history less messy at least. 
+
+Reminder: as a scenario to test, pass the actual catch histories from the channel islands and see how that works. 
+
+Now, let's check on sampling lengths
+
+
+```{r}
+
+  length_and_age_comps <- sim %>%
+    select(year,patch,age, numbers, numbers_caught) %>%
+    nest(-year,-patch, .key = n_at_age)
+
+  length_and_age_comps <- length_and_age_comps %>%
+    mutate(pop_length = map(n_at_age, ~sample_lengths(n_at_age = .x,
+                                                      cv = fish$cv_len,
+                                                      k = fish$vbk,
+                                                      linf = fish$linf,
+                                                      t0 = fish$t0,
+                                                      sample_type = 'catch',
+                                                      percent_sampled = 1,
+                                                      time_step = fish$time_step)))
+  
+    length_and_age_comps <- length_and_age_comps %>%
+    mutate(pop_ages = map(pop_length, ~length_to_age(length_samples = .x,
+                                                     cv = fish$cv_len,
+                                                     k = fish$vbk,
+                                                     linf = fish$linf,
+                                                     t0 = fish$t0,
+                                                     max_age = fish$max_age,
+                                                     min_age = fish$min_age,
+                                                     time_step = fish$time_step)))
+    
+    sampled <- length_and_age_comps$pop_ages[[50]] %>% 
+      mutate(source = "sampled")
+    
+    true <- length_and_age_comps$n_at_age[[50]]  %>% 
+      select(age, numbers) %>% 
+      mutate(source = "true")
+    
+    sampled %>% 
+      bind_rows(true) %>% 
+      group_by(source) %>%
+      mutate(numbers = numbers / sum(numbers)) %>%
+      ungroup() %>%
+      ggplot(aes(age, numbers, fill = source)) + 
+      geom_density(stat = "identity", alpha = 0.5)
+    
+
+```
+
+Sweet, that actually works pretty damn well! fairly shocked by that honestly. So, you might be ready to go. and get started model fitting tomorrow. damn. 
+
+Let's quickly check on the stock assessment stuff and see if that still works (sort of) before diving into the model fitting. 
+
+
+```{r}
+
+true_f <- sim %>% 
+  group_by(year,patch) %>% 
+  summarise(f = unique(f)) #%>% 
+
+length_comps <- length_and_age_comps %>% 
+  select(year,patch, pop_length) %>% 
+  unnest()
+
+length_comps <- length_comps %>% 
+  nest(-year,-patch, .key = 'length_comps') %>% 
+  left_join(true_f, by = c('year','patch'))
+
+assessments <- length_comps %>% 
+  mutate(assessments = map2(length_comps, f, run_assessments, fish = fish, fleet = fleet))
+
+
+```
+
+# Fixing length and age sampling
+
+OK, there's still something wrong with the way you're sampling lengths. No moving on until under perfect circumstances you can perfectly reproduce the true age structure. 
+
+
+Right off the bat the problem looks obvious: you're not correctly disouncting the probability of being in a given age by the chance of actually living to that age, and so the sampes are filling things out to arbitrary max ages
+
+```{r}
+library(rstan)
+library(FishLife)
+library(spasm)
+library(tidyverse)
+
+fish <- create_fish(query_fishlife = T, mat_mode = "length", max_age = 100, time_step = 0.25)
+
+fleet <- create_fleet(fish = fish)
+
+manager <- create_manager(mpa_size = 0)
+
+fleet <-
+  spasm::update_fleet(
+  fleet = purrr::list_modify(
+  fleet,
+  fleet_model = "open-access",
+  initial_effort = 1,
+  theta = 0.01,
+  cost = 30,
+  price = 1,
+  target_catch = 100,
+  sigma_effort = 0,
+  length_50_sel = 0,
+  theta_tuner = 0.5
+  ),
+  fish = fish
+  )
+
+sim <- spasm::sim_fishery(fish = fish,
+                   fleet = fleet, 
+                   manager = manager,
+                   num_patches = 1,
+                   sim_years = 100,
+                   burn_year = 50,
+                   time_step = fish$time_step)
+
+sim %>% 
+  group_by(year) %>% 
+  summarise(ssb = sum(effort)) %>% 
+  ggplot(aes(year, ssb)) + 
+  geom_line() + 
+  geom_point()
+
+ length_and_age_comps <- sim %>%
+    select(year,patch,age, numbers, numbers_caught) %>%
+    nest(-year,-patch, .key = n_at_age) %>% 
+   filter(year == max(year))
+
+  length_and_age_comps <- length_and_age_comps %>%
+    mutate(catch_length = map(n_at_age, ~sample_lengths(n_at_age = .x,
+                                                      cv = fish$cv_len,
+                                                      k = fish$vbk,
+                                                      linf = fish$linf,
+                                                      t0 = fish$t0,
+                                                      sample_type = 'population',
+                                                      percent_sampled = 1,
+                                                      time_step = fish$time_step)))
+  
+    length_and_age_comps <- length_and_age_comps %>%
+    mutate(catch_ages = map(catch_length, ~length_to_age(length_samples = .x,
+                                                     cv = fish$cv_len,
+                                                     k = fish$vbk,
+                                                     linf = fish$linf,
+                                                     t0 = fish$t0,
+                                                     max_age = fish$max_age,
+                                                     min_age = fish$min_age,
+                                                     time_step = fish$time_step)))
+    
+check_ages <- length_and_age_comps %>% 
+  select(year, patch, n_at_age, catch_ages) %>% 
+  unnest() %>% 
+  select(-age1, -numbers_caught) %>% 
+  rename(sampled_catch_numbers = numbers1) %>% 
+  gather(source, numbers, contains("numbers")) %>% 
+  group_by(year, source) %>% 
+  mutate(snumbers = numbers /sum(numbers)) %>% 
+  ungroup() %>% 
+    filter(year == max(year))
+
+
+wtf <- check_ages %>% 
+  select(-snumbers) %>% 
+  spread(source, numbers)
+
+a = check_ages %>% 
+  mutate(ln = log(numbers)) %>% 
+  filter(numbers >= 1) %>% 
+  ggplot(aes(age, ln, fill = source)) + 
+  geom_col(stat = "identity", alpha = 0.5, position = "dodge")
+
+a
+
+
+length_and_age_comps %>% 
+  filter(year == max(year)) %>% 
+  select(catch_length) %>% 
+  unnest() %>% 
+  filter(length_bin <150) %>% 
+  ggplot() +
+  geom_col(aes(length_bin, numbers)) +
+  geom_vline(xintercept = fish$linf) +
+  geom_vline(xintercept = fish$length_at_age)
+  
+
+```
+
+Looks like your length conversions are OK, so your problem is in then assigning those lengths to ages. 
+
+Oh, well duh, you're not accounting for probability of being in a given age along with length at age. 
+
+Now wait, are you making this waaaaay too complicated? Since you've introduced variation in the size at age, which is on average correct, why not just use VBK to transfer back to ages? It'll be a little off due to the smoothing, but not as bad as it is now. 
+
+Did that for now, and for now since you dont' need ages, since fuck catch curves at the moment, ignore the aging of the length samples until you can talk to someone about it. 
+
+
+
 

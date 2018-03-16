@@ -6,15 +6,17 @@
 \usage{
 create_fleet(eq_f = NA, length_50_sel = 1, delta = 2, fish,
   mpa_reaction = "concentrate", price = 1, cost = 0.1, beta = 1.3,
-  theta = 0.1, q = 0.001, fleet_model = "constant-effort",
-  effort_allocation = "gravity", cost_function = "constant",
-  cost_slope = 0, tech_rate = 0, initial_effort = 100, target_catch = 0,
-  catches = NA, sigma_effort = 0)
+  theta = 0.1, q = 0.001, price_sigma = 0, price_ac = 0, q_sigma = 0,
+  q_ac = 0, cost_sigma = 0, cost_ac = 0,
+  fleet_model = "constant-effort", effort_allocation = "gravity",
+  cost_function = "constant", cost_slope = 0, tech_rate = 0,
+  initial_effort = 100, target_catch = 0, catches = NA,
+  sigma_effort = 0, profit_lags = 4, theta_tuner = 0.25)
 }
 \arguments{
 \item{delta}{cm above length50 at 95 selectivity}
 
-\item{sigma_effort}{}
+\item{theta_tuner}{}
 }
 \value{
 a fleet object

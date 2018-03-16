@@ -10,7 +10,7 @@
 #' @export
 #'
 #' @examples
-lbspr_lite  <- function(f,
+lbspr_lite <- function(f,
                         fish,
                         fleet,
                         length_comps,
