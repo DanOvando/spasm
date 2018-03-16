@@ -75,7 +75,9 @@ create_fish <- function(common_name = 'white seabass',
                         sigma_r = 0,
                         rec_ac = 0,
                         cores = 4,
-                        mat_mode = "age") {
+                        mat_mode = "age",
+                        default_wb = 2.8,
+                        tune_weight = FALSE) {
 
 
   fish <- list()
@@ -122,6 +124,7 @@ create_fish <- function(common_name = 'white seabass',
       fish_life$winfinity <- fish_life$winfinity / 1000
     }
 
+    if (tune_weight == T){
     weight_stan <- "
    data {
     real winf;
@@ -154,6 +157,10 @@ create_fish <- function(common_name = 'white seabass',
     weight_fit <- broom::tidy(weight_fit) %>%
       select(term, estimate) %>%
       spread(term, estimate)
+    } else{
+      weight_fit <- data_frame(wa = fish_life$winfinity / (fish_life$loo ^ default_wb),
+                               wb = default_wb)
+    }
   # process lengths ---------------------------------------------------------
 
   if (is.na(linf)) {
@@ -176,7 +183,7 @@ create_fish <- function(common_name = 'white seabass',
 
     if (is.na(max_age)){
 
-      max_age <- fish_life$tmax
+      max_age <- ceiling(fish_life$tmax)
 
     }
 
