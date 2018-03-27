@@ -16,6 +16,6 @@ update_fleet <- function(fleet,fish){
   update_fleet_vars <- update_fleet_vars[is.na(update_fleet_vars) == F] #remove missing components
 
   new_fleet <- pmap(fleet[update_fleet_vars], create_fleet, fish = fish) %>%
-    flatten() #run create fish with new variables
+    flatten() #run create fleet with new variables
 
 }

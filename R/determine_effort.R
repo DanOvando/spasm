@@ -46,6 +46,7 @@ determine_effort <-
 
    new_effort <- effort_for_catch$par
 
+
   }
 
   if (fleet$fleet_model == 'supplied-catch') {
@@ -64,7 +65,6 @@ determine_effort <-
       use = 'opt',
       fish = fish
     )
-
     new_effort <- effort_for_catch$par
 
   }

@@ -241,9 +241,10 @@ sim_fishery <-
             stop("fishery is unprofitable at b0")
           }
 
-          fleet <- update_fleet(fleet = purrr::list_modify(fleet, theta = new_theta), fish = fish)
-        }
+          fleet <- purrr::list_modify(fleet, theta = new_theta)
 
+          # fleet <- update_fleet(fleet = purrr::list_modify(fleet, theta = new_theta), fish = fish)
+        }
         effort[y] <- determine_effort(
           last_effort = ifelse(y > (burn_year + 1), effort[y - 1], fleet$initial_effort),
           fleet = fleet,

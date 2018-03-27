@@ -27,12 +27,12 @@ length_to_age <-
         mutate(next_bin = lead(length_bin)) %>%
         mutate(mid_bin = map2_dbl(length_bin, next_bin, ~mean(c(.x,.y), na.rm = T))) %>%
         mutate(expected_age = (log(1 - pmin(0.99*linf,mid_bin) / linf) / -k) - t0) %>%
-        mutate(rounded_age = plyr::round_any(expected_age, fish$time_step, f = floor)) %>%
+        mutate(rounded_age = plyr::round_any(expected_age, time_step, f = floor)) %>%
         group_by(rounded_age) %>%
         summarise(numbers = sum(numbers)) %>%
         rename(age = rounded_age)
 
-      blank_ages <- data_frame(age = seq(fish$min_age, fish$max_age, by = fish$time_step), blanks = 0)
+      blank_ages <- data_frame(age = seq(min_age, max_age, by = time_step), blanks = 0)
 
       age_comp <- age_comp %>%
         right_join(blank_ages, by = "age") %>%
@@ -42,8 +42,6 @@ length_to_age <-
 
 
     } else if (aging_method == "key") {
-
-
       warning("aging by key DOES NOT work correctly right now")
 
     mean_length_at_age <-
