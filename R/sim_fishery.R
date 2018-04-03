@@ -228,7 +228,7 @@ sim_fishery <-
       }
       # Adjust fleet
       if (y > (burn_year)) {
-        if (y == (burn_year + 2)) {
+        if (y == (burn_year + 2) & fleet$fleet_model == "open-access") {
           profits <- pop %>%
             filter(year >= (y - (1 + fleet$profit_lags)), year < y) %>%
             group_by(year) %>%
@@ -236,8 +236,9 @@ sim_fishery <-
 
           total_initial_profits <- mean(profits$profits)
 
-          new_theta <- (effort[y - 1] * fleet$theta_tuner) / total_initial_profits
-          if (new_theta <= 0) {
+          new_theta <- (effort[y - 1] * fleet$theta_tuner) / (total_initial_profits + 1e-3)
+
+          if (new_theta < 0) {
             stop("fishery is unprofitable at b0")
           }
 

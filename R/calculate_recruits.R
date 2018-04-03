@@ -116,7 +116,6 @@ calculate_recruits <-
 
 
     }
-
     recruits <- recruits * exp(rec_devs)
 
     return(recruits)

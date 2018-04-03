@@ -17,7 +17,7 @@ generate_timeseries <- function(thing, sigma, ac, time){
 
   if (length(thing) == 1 & sigma > 0){
 
-    thing <- thing * exp(rnorm(time, 0, sigma) - sigma^2/2)
+    thing <- pmax(0,thing + rnorm(time, 0, sigma))
 
     for (t in 2:length(thing)) {
 
