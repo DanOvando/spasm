@@ -27,7 +27,160 @@ sim_fishery <-
            enviro = NA,
            enviro_strength = 1,
            rec_driver = "stochastic",
+           est_msy = F,
+           tune_costs = F,
+           b_v_bmsy_oa = b_v_bmsy_oa,
            ...) {
+
+    if (est_msy == T){
+
+      efforts = seq(10,400, by = 10)
+
+      tol <- 1
+
+      lower <- 10
+
+      upper <- 400
+
+      golden <- (sqrt(5) -1)/2
+
+      best <- 1000
+
+      delta_best <- 100
+
+      while(delta_best > tol) {
+
+        constant <- (1 - golden) * (upper - lower)
+
+        x1 <- lower + constant
+
+        x2 <- upper - constant
+
+        yield_1 <- estimate_msy(x1, fish = fish, fleet = fleet)
+
+        yield_2 <- estimate_msy(x2, fish = fish, fleet = fleet)
+
+        delta_best <-  (best -  min(yield_1,yield_2))^2
+
+        best <- min(yield_1,yield_2)
+
+        if (yield_1 < yield_2){
+
+          lower <- lower
+
+          upper <- x2
+        } else{
+
+          lower <- x1
+
+          upper <- upper
+
+        }
+
+      } # close golden while
+
+
+     msy_fit <- nlminb(mean(c(lower, upper)), estimate_msy, fish = fish, fleet = fleet, lower = 0)
+
+      fleet$e_msy <- msy_fit$par
+
+      fish$msy <- -msy_fit$objective
+
+      fish$b_msy <- estimate_msy(fleet$e_msy, fish = fish, fleet = fleet, use = "other")
+
+      msy <- fish$msy
+
+    }
+
+    if (tune_costs == T){
+
+      tol <- .01
+
+      lower <- 0
+
+      upper <- 30
+
+      golden <- (sqrt(5) -1)/2
+
+      best <- 1000
+
+      delta_best <- 100
+
+      counter <- 0
+
+      while(delta_best > tol) {
+
+        counter <- counter + 1
+
+        constant <- (1 - golden) * (upper - lower)
+
+        x1 <- lower + constant
+
+        x2 <- upper - constant
+
+        ss_1 <- estimate_costs(cost = x1,
+                                fish = fish,
+                                fleet = fleet,
+                                msy = fish$msy,
+                                e_msy = fleet$e_msy,
+                                b_msy = fish$b_msy,
+                                p_response = fleet$theta,
+                                b_v_bmsy_oa = b_v_bmsy_oa,
+                               sim_years = 100)
+
+        ss_2 <- estimate_costs(cost = x2,
+                               fish = fish,
+                               fleet = fleet,
+                               msy = fish$msy,
+                               e_msy = fleet$e_msy,
+                               b_msy = fish$b_msy,
+                               p_response = fleet$theta,
+                               b_v_bmsy_oa = b_v_bmsy_oa,
+                               sim_years = 100)
+
+        delta_best <-  (0 -  min(ss_1,ss_2))^2
+
+        best <- min(ss_1,ss_2)
+
+        if (ss_1 < ss_2){
+
+          lower <- lower
+
+          upper <- x2
+        } else{
+
+          lower <- x1
+
+          upper <- upper
+
+        }
+
+        if (counter > 20){
+          delta_best <- 0
+        }
+
+      } # close golden while
+
+cost_fit <-         nlminb(
+  mean(c(lower, upper)),
+  estimate_costs,
+  fish = fish,
+  fleet = fleet,
+  lower = 0,
+  msy = fish$msy,
+  e_msy = fleet$e_msy,
+  b_msy = fish$b_msy,
+  p_response = fleet$theta,
+  b_v_bmsy_oa = b_v_bmsy_oa
+)
+
+      fleet$cost <- cost_fit$par
+
+
+    } # close estimate costs
+
+    fleet$p_msy <- fish$price * fish$msy - fleet$cost * fleet$e_msy ^ fleet$beta
+
     sim_years <- burn_year + sim_years
 
     if (fleet$fleet_model == "supplied-catch") {
@@ -87,38 +240,6 @@ sim_fishery <-
         )
     }
 
-
-    # generate time series of price, cost, and q if called for
-    price <- generate_timeseries(fish$price, sigma = fish$price_cv * fish$price, ac = fish$price_ac, time = sim_years)
-
-    cost <- generate_timeseries(fleet$cost, sigma = fleet$cost_cv * fleet$cost, ac = fleet$cost_ac, time = sim_years)
-
-    q <- generate_timeseries(fleet$q, sigma = fleet$q_cv * fleet$q, ac = fleet$q_ac, time = sim_years)
-
-    if (length(fleet$q) == 1) {
-      q <- rep(q, sim_years)
-    }
-    if (length(price) == 1) {
-      price <- rep(price, sim_years)
-    }
-
-    cost_frame <- data_frame(year = 1:sim_years, cost = cost)
-
-    pop <- pop %>%
-      select(-cost) %>%
-      left_join(cost_frame, by = "year")
-
-    if (fleet$cost_function == "distance from port") {
-      cost_frame <- expand.grid(year = 1:sim_years, patch = 1:num_patches) %>%
-        as_data_frame() %>%
-        left_join(cost_frame, by = "year") %>%
-        mutate(cost = cost * (1 + fleet$cost_slope * (patch - 1)))
-
-      pop <- pop %>%
-        select(-cost) %>%
-        left_join(cost_frame, by = c("patch", "year"))
-    }
-
     effort_devs <-
       rnorm(
         sim_years,
@@ -139,7 +260,50 @@ sim_fishery <-
 
     ssb0_at_age <- n0_at_age * fish$ssb_at_age
 
+
+    # generate time series of price, cost, and q if called for
+    price <- generate_timeseries(fish$price, sigma = fish$price_cv * fish$price, ac = fish$price_ac, time = sim_years)
+
+    q <- generate_timeseries(fleet$q, sigma = fleet$q_cv * fleet$q, ac = fleet$q_ac, time = sim_years)
+
+    #
+#     if (tune_costs == T){
+#
+#       fleet$cost <- fleet$oa_ratio * sum(ssb0_at_age) * mean(price) * mean(q)
+#       cost <- generate_timeseries(fleet$cost, sigma = fleet$cost_cv * fleet$cost, ac = fleet$cost_ac, time = sim_years)
+#
+#     } else{
+
+    cost <- generate_timeseries(fleet$cost, sigma = fleet$cost_cv * fleet$cost, ac = fleet$cost_ac, time = sim_years)
+
+    # }
+
+    if (length(fleet$q) == 1) {
+      q <- rep(q, sim_years)
+    }
+    if (length(price) == 1) {
+      price <- rep(price, sim_years)
+    }
+
+    cost_frame <- data_frame(year = 1:sim_years, cost = cost)
+
+    pop <- pop %>%
+      select(-cost) %>%
+      left_join(cost_frame, by = "year")
+
     pop$numbers[pop$year == 1] <- rep(n0_at_age, num_patches)
+
+    if (fleet$cost_function == "distance from port") {
+      cost_frame <- expand.grid(year = 1:sim_years, patch = 1:num_patches) %>%
+        as_data_frame() %>%
+        left_join(cost_frame, by = "year") %>%
+        mutate(cost = cost * (1 + fleet$cost_slope * (patch - 1)))
+
+      pop <- pop %>%
+        select(-cost) %>%
+        left_join(cost_frame, by = c("patch", "year"))
+    }
+
 
     pop <- pop %>%
       left_join(
@@ -229,6 +393,7 @@ sim_fishery <-
       # Adjust fleet
       if (y > (burn_year)) {
         if (y == (burn_year + 2) & fleet$fleet_model == "open-access") {
+
           profits <- pop %>%
             filter(year >= (y - (1 + fleet$profit_lags)), year < y) %>%
             group_by(year) %>%
@@ -236,16 +401,18 @@ sim_fishery <-
 
           total_initial_profits <- mean(profits$profits)
 
-          new_theta <- (effort[y - 1] * fleet$theta_tuner) / (total_initial_profits + 1e-3)
+          # new_theta <- (effort[y - 1] * fleet$theta_tuner) / (total_initial_profits + 1e-3)
+          #
+          # if (new_theta < 0) {
+          #   stop("fishery is unprofitable at b0")
+          # }
 
-          if (new_theta < 0) {
-            stop("fishery is unprofitable at b0")
-          }
-
-          fleet <- purrr::list_modify(fleet, theta = new_theta)
+          # fleet <- purrr::list_modify(fleet, theta = new_theta)
 
           # fleet <- update_fleet(fleet = purrr::list_modify(fleet, theta = new_theta), fish = fish)
         }
+
+
         effort[y] <- determine_effort(
           last_effort = ifelse(y > (burn_year + 1), effort[y - 1], fleet$initial_effort),
           fleet = fleet,
@@ -256,7 +423,9 @@ sim_fishery <-
           mpa = mpa,
           num_patches = num_patches,
           effort_devs = effort_devs,
-          profit_lags = fleet$profit_lags
+          profit_lags = fleet$profit_lags,
+          e_msy = fleet$e_msy,
+          p_msy = fleet$p_msy
         )
       }
 
@@ -376,5 +545,6 @@ sim_fishery <-
       left_join(price_mat, by = "year") %>%
       filter(year > burn_year, year < max(year)) %>%
       mutate(eventual_mpa = patch %in% mpa_locations)
+
     return(pop)
   }

@@ -12,11 +12,12 @@ create_fish(common_name = "white seabass",
   delta_mature = 0.1, age_50_mature = NA, age_95_mature = NA,
   age_mature = NA, length_mature = NA, m = NA, steepness = 0.8,
   r0 = 10000, density_dependence_form = 1, adult_movement = 2,
-  larval_movement = 2, query_fishlife = T, price = 1, sigma_r = 0,
-  rec_ac = 0, cores = 4, mat_mode = "age")
+  larval_movement = 2, query_fishlife = T, price = 1, price_cv = 0,
+  price_ac = 0, sigma_r = 0, rec_ac = 0, cores = 4, mat_mode = "age",
+  default_wb = 2.8, tune_weight = FALSE)
 }
 \arguments{
-\item{mat_mode}{}
+\item{price_cv}{}
 }
 \value{
 a fish list object

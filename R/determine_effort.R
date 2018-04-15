@@ -25,68 +25,78 @@ determine_effort <-
            mpa,
            num_patches,
            effort_devs,
-           profit_lags = 4) {
+           profit_lags = 2,
+           e_msy,
+           p_msy,
+           mey_buffer = 2) {
+    new_effort <- last_effort
+    if (fleet$fleet_model == 'constant-catch') {
+      effort_for_catch <- nlminb(
+        1,
+        catch_target,
+        target_catch =
+          fleet$target_catch,
+        pop = pop %>% filter(year == y),
+        num_patches = num_patches,
+        mpa = mpa,
+        fleet = fleet,
+        lower = 0,
+        use = 'opt',
+        fish = fish
+      )
 
-  new_effort <- last_effort
-  if (fleet$fleet_model == 'constant-catch') {
+      new_effort <- effort_for_catch$par
 
-    effort_for_catch <- nlminb(
-      1,
-      catch_target,
-      target_catch =
-        fleet$target_catch,
-      pop = pop %>% filter(year == y),
-      num_patches = num_patches,
-      mpa = mpa,
-      fleet = fleet,
-      lower = 0,
-      use = 'opt',
-      fish = fish
-    )
 
-   new_effort <- effort_for_catch$par
+    }
+
+    if (fleet$fleet_model == 'supplied-catch') {
+      target_catch <- fleet$catches[y - burn_year]
+
+      effort_for_catch <- nlminb(
+        1,
+        catch_target,
+        target_catch =
+          target_catch,
+        pop = pop %>% filter(year == y),
+        num_patches = num_patches,
+        mpa = mpa,
+        fleet = fleet,
+        lower = 0,
+        use = 'opt',
+        fish = fish
+      )
+      new_effort <- effort_for_catch$par
+
+    }
+
+
+    if (fleet$fleet_model == 'open-access') {
+      profits <- pop %>%
+        filter(year >= (y - (1 + profit_lags)), year < y) %>%
+        group_by(year) %>%
+        summarise(profits = sum(profits))
+
+      if (is.na(e_msy) | is.na(p_msy)) {
+        stop("need to estiamte msy and tune costs to run open-access")
+      }
+
+      new_effort <-
+        last_effort + e_msy * (fleet$theta * mean(profits$profits / (p_msy * mey_buffer))) * exp(effort_devs[y + 1])
+
+      if (new_effort <= 0) {
+        new_effort = -.01 / (new_effort - 1)
+
+      }
+
+    }
+
+    if (fleet$fleet_model == 'constant-effort') {
+      new_effort <- last_effort
+
+    }
+
+    return(new_effort)
 
 
   }
-
-  if (fleet$fleet_model == 'supplied-catch') {
-    target_catch <- fleet$catches[y - burn_year]
-
-    effort_for_catch <- nlminb(
-      1,
-      catch_target,
-      target_catch =
-        target_catch,
-      pop = pop %>% filter(year == y),
-      num_patches = num_patches,
-      mpa = mpa,
-      fleet = fleet,
-      lower = 0,
-      use = 'opt',
-      fish = fish
-    )
-    new_effort <- effort_for_catch$par
-
-  }
-
-
-  if (fleet$fleet_model == 'open-access') {
-    profits <- pop %>%
-      filter(year >= (y - (1 + profit_lags)), year < y) %>%
-      group_by(year) %>%
-      summarise(profits = sum(profits))
-  new_effort <-
-      max(0, last_effort + fleet$theta * mean(profits$profits)) * exp(effort_devs[y + 1])
-  }
-
-  if (
-      fleet$fleet_model == 'constant-effort'
-  ) {
-   new_effort <- last_effort
-
-  }
-
-  return(new_effort)
-
-
-}
