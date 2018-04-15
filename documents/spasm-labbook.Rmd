@@ -1292,5 +1292,284 @@ Now wait, are you making this waaaaay too complicated? Since you've introduced v
 Did that for now, and for now since you dont' need ages, since fuck catch curves at the moment, ignore the aging of the length samples until you can talk to someone about it. 
 
 
+# making scrooge more responsive
+
+```{r}
+library(rstan)
+library(FishLife)
+library(spasm)
+library(tidyverse)
+
+set.seed(42)
+fish <-
+  create_fish(
+    query_fishlife = T,
+    mat_mode = "length",
+    linf = 100,
+    max_age = 30,
+    time_step = 1,
+    sigma_r = 0,
+    price = 1,
+    price_cv = 0.75,
+    price_ac = 0.75,
+    steepness = 0.6
+  )
+
+fleet <- create_fleet(
+  fish = fish,
+  cost = 3,
+  cost_cv =  0.75,
+  cost_ac = 0.75,
+  q_cv = .5,
+  q_ac = .95,
+  profit_lags = 0
+)
+
+fleet <-
+  spasm::update_fleet(
+    fleet = purrr::list_modify(
+      fleet,
+      fleet_model = "open-access",
+      initial_effort = 10,
+      cost = 1,
+      target_catch = 100,
+      sigma_effort = 0,
+      length_50_sel = 50,
+      theta_tuner = .75
+    ),
+    fish = fish
+  )
+
+
+sim <- spasm::sim_fishery(
+  fish = fish,
+  fleet = fleet,
+  manager = create_manager(mpa_size = 0),
+  num_patches = 1,
+  sim_years = 100,
+  burn_year = 50,
+  time_step = fish$time_step
+)
+
+sim %>% 
+  group_by(year) %>% 
+  summarise(ssb = sum(ssb)) %>% 
+  ggplot(aes(year, ssb))  +
+  geom_point()
+
+
+sim %>% 
+  group_by(year) %>% 
+  summarise(effort = mean(effort),
+            price = unique(price),
+            cost = unique(cost),
+            profits = sum(profits),
+            revs = sum(biomass_caught * price)) %>% 
+  ungroup() %>% 
+  mutate(delta_price = price - lag(price),
+         delta_cost = cost - lag(cost)) %>% 
+  gather(variable, value, -year, -effort) %>% 
+  ggplot(aes((value), effort, color = variable)) +
+  geom_point(show.legend = F) +
+  facet_wrap(~variable, scales = "free")
+
+
+```
+
+So that's the problem at it's core. Well not sure if it's a problem, but reality. The relationship between price and profits is only loose. Wonder if part of that is an artifact of fishing down the initial stock...
+
+A little bit, the core fact is tshat price and costs themselves are weak signals of effort, even in this stylized world. This goes back to your original ideas of caculating dE/dprice, and of course realizing that it is completely state dependent. So, it's no surprise that prices and costs themselves are not informative. 
+
+At its core then, I think you need to abandon shock scrooge; it has to have some structural parameters to it... unless you did soemthing interesting like lags of prices and costs... takens theorem? Or should you focus more on integrating effort priors themselves, thinking that prices and costs themselves don't tell you much..., at least if you want to stick with a classic model of open access fisheries, which seems reasonable. 
+
+
+
+
+parameterize price shocks on the scale of Tyler's database!
+
+
+```{r}
+  fish_prices <-
+    readr::read_csv("~/Box Sync/Databases/Exvessel Prices/Exvessel Price Database.csv") 
+
+price_cv <- fish_prices %>% 
+  group_by(scientific_name) %>% 
+  summarise(cv = sd(exvessel, na.rm = T) / mean(exvessel, na.rm = T)) 
+
+price_cv %>% 
+  ggplot(aes(cv)) + 
+  geom_histogram()
+
+```
+
+
+# Restructuring cost and theta tuning
+
+`scrooge` now has a much better approach for tuning costa and theta. First, calculate MSY. Then, calculate e_msy, and then tune costs to achieve a desired open access depletion. 
+
+So, the first step here, is that you need to create a est-msy function for SPASM. 
+
+Should be pretty straightforward, just run sim-fishery a bunch and tune for yields?
+
+```{r}
+library(rstan)
+library(FishLife)
+library(spasm)
+library(tidyverse)
+
+set.seed(42)
+fish <-
+  create_fish(
+    query_fishlife = T,
+    mat_mode = "length",
+    linf = 100,
+    max_age = 30,
+    time_step = 1,
+    sigma_r = 0,
+    price = 1,
+    price_cv = 0,
+    price_ac = 0,
+    steepness = 0.6
+  )
+
+fleet <- create_fleet(
+  fish = fish,
+  cost = 3,
+  cost_cv =  0,
+  cost_ac = 0,
+  q_cv = 0,
+  q_ac = 0,
+  profit_lags = 0,
+  length_50_sel = 50
+)
+
+check <- estimate_msy(10, fish = fish, fleet = fleet)
+
+
+efforts = seq(10,400, by = 10)
+
+yields <- NA
+
+for (i in seq_along(efforts)){
+  
+  yields[i] <- estimate_msy(efforts[i], fish = fish, fleet = fleet)
+  
+}
+
+e_msy_guess <- efforts[yields == min(yields)]
+
+msy_fit <- nlminb(e_msy_guess, estimate_msy, fish = fish, fleet = fleet, lower = 0)
+
+e_msy <- msy_fit$par
+
+b_msy <- estimate_msy(e_msy, fish = fish, fleet = fleet, use = "other")
+
+
+  fleet$theta <- p_response
+
+  msy <- -msy_fit$objective
+  
+costs = seq(.25,10, by = 0.25)
+
+ss <- NA
+
+for (i in seq_along(costs)){
+  
+  ss[i] <- estimate_costs(cost = costs[i], 
+                       fish = fish, 
+                       fleet = fleet,
+                       msy = msy,
+                       e_msy = e_msy,
+                       b_msy = b_msy,
+                       p_response = p_response,
+                       b_v_bmsy_oa = 0.5)
+
+  
+}
+
+cost_guess <- costs[ss == min(ss)]
+
+cost <-
+  nlminb(
+  cost_guess,
+  estimate_costs,
+  fish = fish,
+  fleet = fleet,
+  lower = 0,
+  msy = msy,
+  e_msy = e_msy,
+  b_msy = b_msy,
+  p_response = p_response,
+  b_v_bmsy_target = 0.5
+  )
+  
+
+
+```
+
+```{r}
+
+library(rstan)
+library(FishLife)
+library(spasm)
+library(tidyverse)
+
+set.seed(42)
+fish <-
+  create_fish(
+    query_fishlife = T,
+    mat_mode = "length",
+    linf = 100,
+    max_age = 30,
+    time_step = 1,
+    sigma_r = 0,
+    price = 1,
+    price_cv = 0,
+    price_ac = 0,
+    steepness = 0.6
+  )
+
+
+
+fleet <- create_fleet(
+  fish = fish,
+  cost = 3,
+  cost_cv =  0,
+  cost_ac = 0,
+  q_cv = 0,
+  q_ac = 0,
+  profit_lags = 4,
+  length_50_sel = 50,
+  theta = 0.5,
+  fleet_model = "open-access",
+  initial_effort = 0.1
+)
+
+fleet$e_msy <-  NA
+
+fleet$p_msy <-  NA
+
+sim <- sim_fishery(
+  fish = fish,
+  fleet = fleet,
+  manager = create_manager(mpa_size = 0),
+  num_patches = 1,
+  sim_years = 100,
+  burn_year = 50,
+  time_step = fish$time_step,
+  est_msy = T,
+  tune_costs = T,
+  b_v_bmsy_oa = 1.5
+)
+
+sim %>% 
+  group_by(year) %>% 
+  summarise(b = sum(biomass)) %>% 
+  ggplot(aes(year, b)) + 
+  geom_point()
+  
+
+```
+
 
 

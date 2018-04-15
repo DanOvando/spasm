@@ -52,7 +52,8 @@ create_fleet <- function(eq_f = NA,
                          catches = NA,
                          sigma_effort = 0,
                          profit_lags = 4,
-                         theta_tuner = 0.25) {
+                         theta_tuner = 0.25,
+                         oa_ratio = 0.25) {
   p_selected <- function(mu, sigma, l50, delta) {
     length_dist <- pmax(0, rnorm(1000, mu, sigma))
 
