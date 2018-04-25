@@ -35,6 +35,7 @@ estimate_msy <-
         fish = fish
       )
 
+    set.seed(24)
 
     sim <- spasm::sim_fishery(
       fish = fish,
@@ -43,7 +44,9 @@ estimate_msy <-
       num_patches = num_patches,
       sim_years = sim_years,
       burn_year = burn_year,
-      time_step = fish$time_step
+      time_step = fish$time_step,
+      tune_costs = F,
+      est_msy = F
     )
 
     yields <- sim %>%

@@ -53,7 +53,9 @@ create_fleet <- function(eq_f = NA,
                          sigma_effort = 0,
                          profit_lags = 4,
                          theta_tuner = 0.25,
-                         oa_ratio = 0.25) {
+                         oa_ratio = 0.25,
+                         mey_buffer = 2,
+                         effort_ac = 0) {
   p_selected <- function(mu, sigma, l50, delta) {
     length_dist <- pmax(0, rnorm(1000, mu, sigma))
 
@@ -84,6 +86,8 @@ create_fleet <- function(eq_f = NA,
   length_95_sel <- (length_50_sel + delta)
 
   sel_at_age <-  sel_at_age$mean_sel_at_age
+
+  mey_buffer <- mey_buffer
 
   rm(fish)
 

@@ -29,16 +29,15 @@ sim_fishery <-
            rec_driver = "stochastic",
            est_msy = F,
            tune_costs = F,
-           b_v_bmsy_oa = b_v_bmsy_oa,
-           ...) {
+           b_v_bmsy_oa = 0.5,
+           time_step,
+           max_window = 10) {
 
     if (est_msy == T){
 
-      efforts = seq(10,400, by = 10)
+      tol <- 100
 
-      tol <- 1
-
-      lower <- 10
+      lower <- 0
 
       upper <- 400
 
@@ -48,7 +47,22 @@ sim_fishery <-
 
       delta_best <- 100
 
-      while(delta_best > tol) {
+      counter <-  0
+#
+#       efforts <- seq(0,10000, by = 50)
+#
+#       huh <- NA
+#
+#       for (i in seq_along(efforts)){
+#
+#         huh[i] <- estimate_msy(efforts[i], fish = fish, fleet = fleet)
+#
+#       }
+#       # browser()
+
+      while(delta_best > tol | counter < 20) {
+
+        counter <- counter + 1
 
         constant <- (1 - golden) * (upper - lower)
 
@@ -77,8 +91,11 @@ sim_fishery <-
 
         }
 
-      } # close golden while
+        # if (counter == 20){
+        #   browser()
+        # }
 
+      } # close golden while
 
      msy_fit <- nlminb(mean(c(lower, upper)), estimate_msy, fish = fish, fleet = fleet, lower = 0)
 
@@ -93,12 +110,11 @@ sim_fishery <-
     }
 
     if (tune_costs == T){
-
       tol <- .01
 
       lower <- 0
 
-      upper <- 30
+      upper <- 100
 
       golden <- (sqrt(5) -1)/2
 
@@ -107,6 +123,8 @@ sim_fishery <-
       delta_best <- 100
 
       counter <- 0
+
+      set.seed(24)
 
       while(delta_best > tol) {
 
@@ -173,7 +191,6 @@ cost_fit <-         nlminb(
   p_response = fleet$theta,
   b_v_bmsy_oa = b_v_bmsy_oa
 )
-
       fleet$cost <- cost_fit$par
 
 
@@ -243,10 +260,14 @@ cost_fit <-         nlminb(
     effort_devs <-
       rnorm(
         sim_years,
-        mean = -(fleet$sigma_effort ^ 2) / 2,
+        mean = 0,
         sd = fleet$sigma_effort
       )
 
+    for (t in 2:length(effort_devs)) {
+      effort_devs[t] <-
+        effort_devs[t - 1] * fleet$effort_ac + sqrt(1 - fleet$effort_ac ^ 2) * effort_devs[t]
+    }
 
     mpa_locations <- -1
 
@@ -278,7 +299,7 @@ cost_fit <-         nlminb(
 
     # }
 
-    if (length(fleet$q) == 1) {
+    if (length(q) == 1) {
       q <- rep(q, sim_years)
     }
     if (length(price) == 1) {
@@ -412,6 +433,7 @@ cost_fit <-         nlminb(
           # fleet <- update_fleet(fleet = purrr::list_modify(fleet, theta = new_theta), fish = fish)
         }
 
+        previous_max <- ifelse(y > (burn_year + 1),max(effort[max(1,(y - 1 - max_window)):(y - 1)]),fleet$initial_effort)
 
         effort[y] <- determine_effort(
           last_effort = ifelse(y > (burn_year + 1), effort[y - 1], fleet$initial_effort),
@@ -425,7 +447,9 @@ cost_fit <-         nlminb(
           effort_devs = effort_devs,
           profit_lags = fleet$profit_lags,
           e_msy = fleet$e_msy,
-          p_msy = fleet$p_msy
+          p_msy = fleet$p_msy,
+          mey_buffer = fleet$mey_buffer,
+          previous_max = previous_max
         )
       }
 

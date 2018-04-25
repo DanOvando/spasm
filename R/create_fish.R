@@ -85,6 +85,7 @@ create_fish <- function(common_name = 'white seabass',
   if (is.na(scientific_name) == F & query_fishlife == T) {
 
 
+
     genus_species <- stringr::str_split(scientific_name, " ", simplify = T) %>%
       as_data_frame() %>%
       set_names(c("genus", "species"))
@@ -94,7 +95,8 @@ create_fish <- function(common_name = 'white seabass',
         Search_species(Genus = genus, Species = species)$match_taxonomy,
         mfrow = c(2, 2),
         partial_match = T,
-        verbose = F
+        verbose = F,
+        print_plots = F
       )
       out <- Predict[[1]]$Mean_pred %>%
         as.matrix() %>%
@@ -119,6 +121,7 @@ create_fish <- function(common_name = 'white seabass',
       unnest() %>%
       mutate(taxa = glue::glue('{genus} {species}')) %>%
       set_names(tolower)
+
 
     if (weight_units == "kg"){
       fish_life$winfinity <- fish_life$winfinity / 1000

@@ -25,10 +25,12 @@ determine_effort <-
            mpa,
            num_patches,
            effort_devs,
-           profit_lags = 2,
+           profit_lags = 4,
            e_msy,
            p_msy,
-           mey_buffer = 2) {
+           mey_buffer = 2,
+           previous_max = NA,
+           max_expansion = 1.1) {
     new_effort <- last_effort
     if (fleet$fleet_model == 'constant-catch') {
       effort_for_catch <- nlminb(
@@ -85,7 +87,7 @@ determine_effort <-
         last_effort + e_msy * (fleet$theta * mean(profits$profits / (p_msy * mey_buffer))) * exp(effort_devs[y + 1])
 
       if (new_effort <= 0) {
-        new_effort = -.01 / (new_effort - 1)
+        new_effort = -1 / (new_effort - 1)
 
       }
 
@@ -95,6 +97,11 @@ determine_effort <-
       new_effort <- last_effort
 
     }
+
+    if (fleet$fleet_model != 'open-access'){
+    new_effort <- new_effort * exp(effort_devs[y + 1])
+    }
+    new_effort <- pmin(new_effort, previous_max * max_expansion)
 
     return(new_effort)
 

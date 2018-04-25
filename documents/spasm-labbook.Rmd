@@ -1571,5 +1571,69 @@ sim %>%
 
 ```
 
+```{r}
+library(rstan)
+library(FishLife)
+library(spasm)
+library(tidyverse)
+
+set.seed(42)
+fish <-
+  create_fish(
+    query_fishlife = T,
+    mat_mode = "length",
+    linf = 100,
+    max_age = 30,
+    time_step = 1,
+    sigma_r = 0,
+    price = 100,
+    price_cv = 0,
+    price_ac = 0,
+    steepness = 0.6
+  )
+
+
+
+fleet <- create_fleet(
+  fish = fish,
+  cost = 3,
+  cost_cv =  0,
+  cost_ac = 0,
+  q_cv = 0,
+  q_ac = 0,
+  profit_lags = 4,
+  length_50_sel = 50,
+  theta = 0.1,
+  fleet_model = "open-access",
+  initial_effort = 100
+)
+
+fleet$e_msy <-  NA
+
+fleet$p_msy <-  NA
+
+sim <- sim_fishery(
+  fish = fish,
+  fleet = fleet,
+  manager = create_manager(mpa_size = 0),
+  num_patches = 1,
+  sim_years = 100,
+  burn_year = 50,
+  time_step = fish$time_step,
+  est_msy = T,
+  tune_costs = T,
+  b_v_bmsy_oa = 0.5
+)
+
+sim %>% 
+  group_by(year) %>% 
+  summarise(p = sum(profits),
+            ef = unique(effort),
+            b = sum(biomass)) %>% 
+  ggplot(aes(year, ef)) + 
+  geom_point()
+```
+
+
 
 
