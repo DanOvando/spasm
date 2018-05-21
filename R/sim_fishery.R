@@ -389,13 +389,22 @@ cost_fit <-         nlminb(
 
       now_year <- pop$year == y
 
+      if (fish$density_movement_modifier > 0) {
+      adult_density_modifier <- calc_density_gradient(pop, y, num_patches = num_patches,
+                                                      density_modifier = fish$density_movement_modifier)
+
+      if (any(adult_density_modifier < 0)){browser()}
+      } else {
+        adult_density_modifier <- 1
+      }
+
       pop[now_year &
         pop$age > fish$min_age, ] <-
         move_fish(
           pop %>% filter(year == y, age > fish$min_age),
           fish = fish,
           num_patches = num_patches,
-          move_matrix = adult_move_matrix
+          move_matrix = (adult_move_matrix * adult_density_modifier) / rowSums(adult_move_matrix * adult_density_modifier)
         )
 
       # change management
@@ -406,7 +415,7 @@ cost_fit <-         nlminb(
         if (random_mpas == T) {
           mpa_locations <- sample(1:num_patches, prop_mpas)
         } else {
-          mpa_locations <- (1:num_patches)[0:prop_mpas]
+          mpa_locations <- (1:num_patches)[0:prop_mpas] #weird zero is in case prop_mpas is zero
         }
 
         pop$mpa[pop$patch %in% mpa_locations & pop$year >= y] <- T

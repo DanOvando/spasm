@@ -5,7 +5,8 @@
 \title{Title}
 \usage{
 estimate_costs(cost, fish, fleet, msy, e_msy, b_msy, b_v_bmsy_oa, p_response,
-  sim_years = 100, burn_year = 25, num_patches = 1, use = "fit")
+  sim_years = 100, burn_year = 25, num_patches = 1, use = "fit",
+  lags = 0)
 }
 \arguments{
 \item{use}{}

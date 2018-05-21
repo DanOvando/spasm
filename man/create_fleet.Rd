@@ -11,7 +11,7 @@ create_fleet(eq_f = NA, length_50_sel = 1, delta = 2, fish,
   cost_function = "constant", cost_slope = 0, tech_rate = 0,
   initial_effort = 100, target_catch = 0, catches = NA,
   sigma_effort = 0, profit_lags = 4, theta_tuner = 0.25,
-  oa_ratio = 0.25)
+  oa_ratio = 0.25, mey_buffer = 2, effort_ac = 0)
 }
 \arguments{
 \item{delta}{cm above length50 at 95 selectivity}
