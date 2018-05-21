@@ -24,7 +24,7 @@ fleet <- create_fleet(
   cost_ac = 0.25,
   q_cv = 0.25,
   q_ac = 0.25,
-  fleet_model = "open-access",
+  fleet_model = "constant-effort",
   theta = 0.5,
   cost = 2,
   sigma_effort = 0,
@@ -38,12 +38,12 @@ sim <- spasm::sim_fishery(
   fish = fish,
   fleet = fleet,
   manager = create_manager(mpa_size = 0),
-  num_patches = 1,
+  num_patches = 2,
   sim_years = 100,
   burn_year = 50,
   time_step = fish$time_step,
-  est_msy = T,
-  tune_costs = T,
+  est_msy = F,
+  tune_costs = F,
   b_v_bmsy_oa = 0.75
 )
 

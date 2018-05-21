@@ -77,7 +77,8 @@ create_fish <- function(common_name = 'white seabass',
                         cores = 4,
                         mat_mode = "age",
                         default_wb = 2.8,
-                        tune_weight = FALSE) {
+                        tune_weight = FALSE,
+                        density_movement_modifier = 1) {
 
 
   fish <- list()
@@ -90,29 +91,9 @@ create_fish <- function(common_name = 'white seabass',
       as_data_frame() %>%
       set_names(c("genus", "species"))
 
-    get_fish_life <- function(genus, species) {
-      Predict = Plot_taxa(
-        Search_species(Genus = genus, Species = species)$match_taxonomy,
-        mfrow = c(2, 2),
-        partial_match = T,
-        verbose = F,
-        print_plots = F
-      )
-      out <- Predict[[1]]$Mean_pred %>%
-        as.matrix() %>%
-        t() %>%
-        as.data.frame()
-
-      out[colnames(out) != 'Temperature'] <-
-        exp(out[colnames(out) != 'Temperature'])
-
-      return(out)
-
-    }
-
 
     fish_life <- genus_species %>%
-      mutate(life_traits = map2(genus, species, safely(get_fish_life)))
+      mutate(life_traits = pmap(list(Genus = genus, Species = species), safely(FishLife::Get_traits)))
 
     fish_life <- fish_life %>%
       mutate(fish_life_worked = map(life_traits, 'error') %>% map_lgl(is.null)) %>%

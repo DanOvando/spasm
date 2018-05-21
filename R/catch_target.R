@@ -17,14 +17,20 @@ catch_target <- function(total_effort,
                          mpa,
                          fleet,
                          use = 'opt',
-                         fish) {
+                         fish,
+                         prior_profits,
+                         year,
+                         burn_year) {
 
   efforts <- distribute_fleet(
     pop = pop,
     effort = total_effort,
     fleet = fleet,
     num_patches = num_patches,
-    mpa = mpa
+    mpa = mpa,
+    prior_profits = prior_profits,
+    year = year,
+    burn_year = burn_year
   )
 
   fs <- efforts * fleet$q

@@ -44,7 +44,10 @@ determine_effort <-
         fleet = fleet,
         lower = 0,
         use = 'opt',
-        fish = fish
+        fish = fish,
+        prior_profits = pop$profits[pop$year == (y - 1)],
+        year = y,
+        burn_year = burn_year
       )
 
       new_effort <- effort_for_catch$par
@@ -66,7 +69,10 @@ determine_effort <-
         fleet = fleet,
         lower = 0,
         use = 'opt',
-        fish = fish
+        fish = fish,
+        prior_profits = pop$profits[pop$year == (y - 1)],
+        year = y,
+        burn_year = burn_year
       )
       new_effort <- effort_for_catch$par
 

@@ -14,7 +14,7 @@ create_fish(common_name = "white seabass",
   r0 = 10000, density_dependence_form = 1, adult_movement = 2,
   larval_movement = 2, query_fishlife = T, price = 1, price_cv = 0,
   price_ac = 0, sigma_r = 0, rec_ac = 0, cores = 4, mat_mode = "age",
-  default_wb = 2.8, tune_weight = FALSE)
+  default_wb = 2.8, tune_weight = FALSE, density_movement_modifier = 1)
 }
 \arguments{
 \item{price_cv}{}
