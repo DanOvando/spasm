@@ -31,15 +31,28 @@ sim_fishery <-
            tune_costs = F,
            b_v_bmsy_oa = 0.5,
            time_step,
-           max_window = 10) {
+           max_window = 10,
+           msy_cr_ratio = 0.75,
+           tune_to_cr = TRUE) {
+
+    msy <- NA
+
+    p_msy <- NA
+
+    e_msy <- NA
+
+    max_r_msy <-  NA
 
     if (est_msy == T){
+
+
+      e_msy_guess <- fish$m/fleet$q
 
       tol <- 100
 
       lower <- 0
 
-      upper <- 400
+      upper <- e_msy_guess * 3
 
       golden <- (sqrt(5) -1)/2
 
@@ -48,17 +61,6 @@ sim_fishery <-
       delta_best <- 100
 
       counter <-  0
-#
-#       efforts <- seq(0,10000, by = 50)
-#
-#       huh <- NA
-#
-#       for (i in seq_along(efforts)){
-#
-#         huh[i] <- estimate_msy(efforts[i], fish = fish, fleet = fleet)
-#
-#       }
-#       # browser()
 
       while(delta_best > tol | counter < 20) {
 
@@ -97,24 +99,78 @@ sim_fishery <-
 
       } # close golden while
 
-     msy_fit <- nlminb(mean(c(lower, upper)), estimate_msy, fish = fish, fleet = fleet, lower = 0)
 
-      fleet$e_msy <- msy_fit$par
+      msy_foo <- function(seed, lower, upper, fish, fleet) {
 
-      fish$msy <- -msy_fit$objective
+        msy_fit <-
+          nlminb(
+            mean(c(lower, upper)),
+            estimate_msy,
+            fish = fish,
+            fleet = fleet,
+            lower = 0,
+            seed = seed
+          )
 
-      fish$b_msy <- estimate_msy(fleet$e_msy, fish = fish, fleet = fleet, use = "other")
+        out <- list()
 
-      msy <- fish$msy
+        out$e_msy <- msy_fit$par
+
+        out$msy <- -msy_fit$objective
+
+        ref_points <-
+          estimate_msy(
+            out$e_msy,
+            fish = fish,
+            fleet = fleet,
+            use = "other",
+            seed = seed
+          )
+
+        out$b_msy <- ref_points$b_msy
+
+        out$r_msy <- ref_points$r_msy
+
+        return(out)
+
+      } # close msy foo
+
+      msy_ests <- map(sample(1:10000, 10, replace = F), msy_foo, fish = fish, fleet = fleet, lower = lower, upper = upper)
+
+      max_r_msy <- max(map_dbl(msy_ests,"r_msy"))
+
+      e_msy <- mean(map_dbl(msy_ests,"e_msy"))
+
+      fleet$e_msy <- e_msy
+
+      msy <- mean(map_dbl(msy_ests,"msy"))
+
+      fish$msy <- msy
 
     }
 
     if (tune_costs == T){
+
+      if (tune_to_cr == T){
+
+        msy_profits_guess <- max_r_msy * (1 - msy_cr_ratio)
+
+        cost_guess <-
+        (max_r_msy - msy_profits_guess) / fleet$e_msy ^ fleet$beta
+
+        fleet$cost <- cost_guess
+      } else {
+
+
+      msy_profits_guess <- (fish$price * msy)*.25
+
+      cost_guess <- (fish$price * msy - msy_profits_guess) / fleet$e_msy^fleet$beta
+
       tol <- .01
 
       lower <- 0
 
-      upper <- 100
+      upper <- 2*cost_guess
 
       golden <- (sqrt(5) -1)/2
 
@@ -192,11 +248,15 @@ cost_fit <-         nlminb(
   b_v_bmsy_oa = b_v_bmsy_oa
 )
       fleet$cost <- cost_fit$par
+} # close tune to cr
 
+      fleet$p_msy <- fish$price * fish$msy - fleet$cost * fleet$e_msy ^ fleet$beta
+
+      p_msy <-  fleet$p_msy
 
     } # close estimate costs
 
-    fleet$p_msy <- fish$price * fish$msy - fleet$cost * fleet$e_msy ^ fleet$beta
+    fleet$p_msy <- max_r_msy - fleet$cost * fleet$e_msy ^ fleet$beta
 
     sim_years <- burn_year + sim_years
 
@@ -280,7 +340,6 @@ cost_fit <-         nlminb(
     b0_at_age <- n0_at_age * fish$weight_at_age
 
     ssb0_at_age <- n0_at_age * fish$ssb_at_age
-
 
     # generate time series of price, cost, and q if called for
     price <- generate_timeseries(fish$price, sigma = fish$price_cv * fish$price, ac = fish$price_ac, time = sim_years)
@@ -521,11 +580,10 @@ cost_fit <-         nlminb(
         {
           .$numbers_caught
         }
-      # if (y > burn_year){ browser()}
+
+
       pop <- pop %>%
-        # group_by(patch,year) %>%
         mutate(patch_age_costs = ((cost) * (effort) ^ fleet$beta) / fish$max_age) %>% # divide costs up among each age class
-        # ungroup() %>%
         mutate(
           ssb = numbers * ssb_at_age,
           biomass = numbers * weight_at_age,
@@ -577,7 +635,10 @@ cost_fit <-         nlminb(
       left_join(enviro_mat, by = "year") %>%
       left_join(price_mat, by = "year") %>%
       filter(year > burn_year, year < max(year)) %>%
-      mutate(eventual_mpa = patch %in% mpa_locations)
+      mutate(eventual_mpa = patch %in% mpa_locations,
+             msy = msy,
+             p_msy = p_msy,
+             e_msy = e_msy)
 
     return(pop)
   }

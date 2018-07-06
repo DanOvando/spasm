@@ -22,7 +22,8 @@ estimate_msy <-
            mpa_size = 0,
            mpa_year = 100,
            num_patches = 1,
-           use = "fit") {
+           use = "fit",
+           seed = 42) {
 
      fleet <-
       spasm::update_fleet(
@@ -35,7 +36,7 @@ estimate_msy <-
         fish = fish
       )
 
-    set.seed(24)
+    set.seed(seed)
 
     sim <- spasm::sim_fishery(
       fish = fish,
@@ -49,14 +50,20 @@ estimate_msy <-
       est_msy = F
     )
 
+
     yields <- sim %>%
-      filter(year == max(year))
+      filter(year >= (max(year) - 10)) %>%
+      group_by(year) %>%
+      summarise(yield = sum(biomass_caught),
+                biomass = sum(biomass),
+                revenue = sum(biomass_caught * price))
 
     if (use == "fit"){
-      out <- -(sum(yields$biomass_caught))
+      out <- -(mean(yields$yield))
     } else{
 
-      out <- sum(yields$biomass)
+      out <- list(b_msy = mean(yields$biomass),
+                  r_msy = mean(yields$revenue))
 
     }
 
