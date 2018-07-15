@@ -26,11 +26,7 @@ determine_effort <-
            num_patches,
            effort_devs,
            profit_lags = 4,
-           e_msy,
-           p_msy,
-           mey_buffer = 2,
-           previous_max = NA,
-           max_expansion = 1.1) {
+           previous_max = NA) {
     new_effort <- last_effort
     if (fleet$fleet_model == 'constant-catch') {
       effort_for_catch <- nlminb(
@@ -87,15 +83,8 @@ determine_effort <-
                   effort = unique(effort)) %>%
         mutate(ppue = profits / (effort + 1e-6))
 
-      # if (is.na(e_msy) | is.na(p_msy)) {
-      #   stop("need to estiamte msy and tune costs to run open-access")
-      # }
-
       new_effort <-
-        last_effort + (fleet$theta * mean(profits$ppue)) * exp(effort_devs[y + 1])
-
-      # new_effort <-
-      #   last_effort + e_msy * (fleet$theta * mean(profits$profits / (p_msy * mey_buffer))) * exp(effort_devs[y + 1])
+        last_effort + (fleet$theta * weighted.mean(profits$ppue, profits$year)) * exp(effort_devs[y + 1])
 
       if (new_effort <= 0) {
         new_effort = -1 / (new_effort - 1)
@@ -113,7 +102,7 @@ determine_effort <-
     new_effort <- new_effort * exp(effort_devs[y + 1])
     }
 
-    new_effort <- pmax(last_effort * (max_expansion - 1), pmin(new_effort, previous_max * max_expansion))
+    # new_effort <- pmax(last_effort * (1 - fleet$max_perc_change_f), pmin(new_effort, previous_max * (1 + fleet$max_perc_change_f)))
 
     return(new_effort)
 

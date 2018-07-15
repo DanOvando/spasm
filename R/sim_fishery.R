@@ -413,9 +413,6 @@ sim_fishery <-
           num_patches = num_patches,
           effort_devs = effort_devs,
           profit_lags = fleet$profit_lags,
-          e_msy = fleet$e_msy,
-          p_msy = fleet$p_msy,
-          mey_buffer = fleet$mey_buffer,
           previous_max = previous_max
         )
       }

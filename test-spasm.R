@@ -30,10 +30,10 @@ fleet <- create_fleet(
   sigma_effort = 0,
   length_50_sel = 0.25 * fish$linf,
   initial_effort = 100,
-  profit_lags =  0,
-  beta = 1.3,
-  max_cp_ratio = 0.8,
-  max_perc_change_f = 0.5
+  profit_lags =  1,
+  beta = 1.1,
+  max_cp_ratio = 0.25,
+  max_perc_change_f = 0.25
 )
 
 sim_noad <- spasm::sim_fishery(
