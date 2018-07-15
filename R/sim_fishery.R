@@ -28,12 +28,8 @@ sim_fishery <-
            enviro_strength = 1,
            rec_driver = "stochastic",
            est_msy = F,
-           tune_costs = F,
-           b_v_bmsy_oa = 0.5,
            time_step,
-           max_window = 10,
-           msy_cr_ratio = 0.75,
-           tune_to_cr = TRUE) {
+           max_window = 10) {
 
     msy <- NA
 
@@ -93,9 +89,6 @@ sim_fishery <-
 
         }
 
-        # if (counter == 20){
-        #   browser()
-        # }
 
       } # close golden while
 
@@ -148,113 +141,6 @@ sim_fishery <-
       fish$msy <- msy
 
     }
-
-    if (tune_costs == T){
-
-      if (tune_to_cr == T){
-
-        msy_profits_guess <- max_r_msy * (1 - msy_cr_ratio)
-
-        cost_guess <-
-        (max_r_msy - msy_profits_guess) / fleet$e_msy ^ fleet$beta
-
-        fleet$cost <- cost_guess
-      } else {
-
-
-      msy_profits_guess <- (fish$price * msy)*.25
-
-      cost_guess <- (fish$price * msy - msy_profits_guess) / fleet$e_msy^fleet$beta
-
-      tol <- .01
-
-      lower <- 0
-
-      upper <- 2*cost_guess
-
-      golden <- (sqrt(5) -1)/2
-
-      best <- 1000
-
-      delta_best <- 100
-
-      counter <- 0
-
-      set.seed(24)
-
-      while(delta_best > tol) {
-
-        counter <- counter + 1
-
-        constant <- (1 - golden) * (upper - lower)
-
-        x1 <- lower + constant
-
-        x2 <- upper - constant
-
-        ss_1 <- estimate_costs(cost = x1,
-                                fish = fish,
-                                fleet = fleet,
-                                msy = fish$msy,
-                                e_msy = fleet$e_msy,
-                                b_msy = fish$b_msy,
-                                p_response = fleet$theta,
-                                b_v_bmsy_oa = b_v_bmsy_oa,
-                               sim_years = 100)
-
-        ss_2 <- estimate_costs(cost = x2,
-                               fish = fish,
-                               fleet = fleet,
-                               msy = fish$msy,
-                               e_msy = fleet$e_msy,
-                               b_msy = fish$b_msy,
-                               p_response = fleet$theta,
-                               b_v_bmsy_oa = b_v_bmsy_oa,
-                               sim_years = 100)
-
-        delta_best <-  (0 -  min(ss_1,ss_2))^2
-
-        best <- min(ss_1,ss_2)
-
-        if (ss_1 < ss_2){
-
-          lower <- lower
-
-          upper <- x2
-        } else{
-
-          lower <- x1
-
-          upper <- upper
-
-        }
-
-        if (counter > 20){
-          delta_best <- 0
-        }
-
-      } # close golden while
-
-cost_fit <-         nlminb(
-  mean(c(lower, upper)),
-  estimate_costs,
-  fish = fish,
-  fleet = fleet,
-  lower = 0,
-  msy = fish$msy,
-  e_msy = fleet$e_msy,
-  b_msy = fish$b_msy,
-  p_response = fleet$theta,
-  b_v_bmsy_oa = b_v_bmsy_oa
-)
-      fleet$cost <- cost_fit$par
-} # close tune to cr
-
-      fleet$p_msy <- fish$price * fish$msy - fleet$cost * fleet$e_msy ^ fleet$beta
-
-      p_msy <-  fleet$p_msy
-
-    } # close estimate costs
 
     fleet$p_msy <- max_r_msy - fleet$cost * fleet$e_msy ^ fleet$beta
 
@@ -332,10 +218,10 @@ cost_fit <-         nlminb(
     mpa_locations <- -1
 
     n0_at_age <-
-      fish$r0 / num_patches * exp(-fish$m * seq(fish$min_age, fish$max_age, fish$time_step))
+      (fish$r0 / num_patches) * exp(-fish$m * seq(fish$min_age, fish$max_age, fish$time_step))
 
-    n0_at_age[fish$max_age] <-
-      n0_at_age[fish$max_age] / (1 - exp(-fish$m))
+    n0_at_age[fish$max_age + 1] <-
+      n0_at_age[fish$max_age + 1] / (1 - exp(-fish$m))
 
     b0_at_age <- n0_at_age * fish$weight_at_age
 
@@ -346,17 +232,28 @@ cost_fit <-         nlminb(
 
     q <- generate_timeseries(fleet$q, sigma = fleet$q_cv * fleet$q, ac = fleet$q_ac, time = sim_years)
 
-    #
-#     if (tune_costs == T){
-#
-#       fleet$cost <- fleet$oa_ratio * sum(ssb0_at_age) * mean(price) * mean(q)
-#       cost <- generate_timeseries(fleet$cost, sigma = fleet$cost_cv * fleet$cost, ac = fleet$cost_ac, time = sim_years)
-#
-#     } else{
+  # tune costs based on some heavy fishing at b0
+
+   hyp_f <- fish$m #hypothetical f
+
+   hyp_effort <- hyp_f / max(q)
+
+   hyp_f_at_age <- hyp_f * fleet$sel_at_age
+
+   hyp_b0_catch <- sum((hyp_f_at_age / (hyp_f_at_age + fish$m))  * b0_at_age * (1 - exp(-(hyp_f_at_age + fish$m))))
+
+   b0_revenue <- max(price) * hyp_b0_catch
+
+   hyp_profits_guess <- b0_revenue * (1 - fleet$max_cp_ratio)
+
+   cost_guess <-
+     (b0_revenue - hyp_profits_guess) / hyp_effort ^ fleet$beta
+
+   fleet$cost <- cost_guess
+
+   fleet$theta <- (fleet$max_perc_change_f * hyp_effort) / (hyp_profits_guess / hyp_effort)
 
     cost <- generate_timeseries(fleet$cost, sigma = fleet$cost_cv * fleet$cost, ac = fleet$cost_ac, time = sim_years)
-
-    # }
 
     if (length(q) == 1) {
       q <- rep(q, sim_years)
@@ -457,6 +354,7 @@ cost_fit <-         nlminb(
         adult_density_modifier <- 1
       }
 
+      if (num_patches > 1) {
       pop[now_year &
         pop$age > fish$min_age, ] <-
         move_fish(
@@ -465,6 +363,7 @@ cost_fit <-         nlminb(
           num_patches = num_patches,
           move_matrix = (adult_move_matrix * adult_density_modifier) / rowSums(adult_move_matrix * adult_density_modifier)
         )
+      }
 
       # change management
 

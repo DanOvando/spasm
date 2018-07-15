@@ -83,14 +83,19 @@ determine_effort <-
       profits <- pop %>%
         filter(year >= (y - (1 + profit_lags)), year < y) %>%
         group_by(year) %>%
-        summarise(profits = sum(profits))
+        summarise(profits = sum(profits),
+                  effort = unique(effort)) %>%
+        mutate(ppue = profits / (effort + 1e-6))
 
-      if (is.na(e_msy) | is.na(p_msy)) {
-        stop("need to estiamte msy and tune costs to run open-access")
-      }
+      # if (is.na(e_msy) | is.na(p_msy)) {
+      #   stop("need to estiamte msy and tune costs to run open-access")
+      # }
 
       new_effort <-
-        last_effort + e_msy * (fleet$theta * mean(profits$profits / (p_msy * mey_buffer))) * exp(effort_devs[y + 1])
+        last_effort + (fleet$theta * mean(profits$ppue)) * exp(effort_devs[y + 1])
+
+      # new_effort <-
+      #   last_effort + e_msy * (fleet$theta * mean(profits$profits / (p_msy * mey_buffer))) * exp(effort_devs[y + 1])
 
       if (new_effort <= 0) {
         new_effort = -1 / (new_effort - 1)
@@ -107,7 +112,8 @@ determine_effort <-
     if (fleet$fleet_model != 'open-access'){
     new_effort <- new_effort * exp(effort_devs[y + 1])
     }
-    new_effort <- pmin(new_effort, previous_max * max_expansion)
+
+    new_effort <- pmax(last_effort * (max_expansion - 1), pmin(new_effort, previous_max * max_expansion))
 
     return(new_effort)
 
