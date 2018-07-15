@@ -13,17 +13,26 @@
 #'
 #' @examples
 #' generate_timeseries(thing = 2, sigma = .1, ac = 0.5, time = 10)
-generate_timeseries <- function(thing, sigma, ac, time){
+generate_timeseries <- function(thing, cv, ac, time){
+
+  sigma <- sqrt(log(cv^2 + 1))
 
   if (length(thing) == 1 & sigma > 0){
 
-    thing <- pmax(0,thing + rnorm(time, 0, sigma))
+    thing_devs <-
+      rnorm(
+        time,
+        mean = -(sigma ^ 2) / 2,
+        sd = sigma
+      )
 
-    for (t in 2:length(thing)) {
+    for (t in 2:length(thing_devs)) {
 
-      thing[t] <-
-        thing[t - 1] * ac + sqrt(1 - ac ^ 2) * thing[t]
+      thing_devs[t] <-
+        thing_devs[t - 1] * ac + sqrt(1 - ac ^ 2) * thing_devs[t]
     }
+
+    thing <- thing * exp(thing_devs)
 
   }
 

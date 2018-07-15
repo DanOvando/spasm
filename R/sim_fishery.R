@@ -142,8 +142,6 @@ sim_fishery <-
 
     }
 
-    fleet$p_msy <- max_r_msy - fleet$cost * fleet$e_msy ^ fleet$beta
-
     sim_years <- burn_year + sim_years
 
     if (fleet$fleet_model == "supplied-catch") {
@@ -228,9 +226,10 @@ sim_fishery <-
     ssb0_at_age <- n0_at_age * fish$ssb_at_age
 
     # generate time series of price, cost, and q if called for
-    price <- generate_timeseries(fish$price, sigma = fish$price_cv * fish$price, ac = fish$price_ac, time = sim_years)
 
-    q <- generate_timeseries(fleet$q, sigma = fleet$q_cv * fleet$q, ac = fleet$q_ac, time = sim_years)
+    price <- generate_timeseries(fish$price, cv = fish$price_cv, ac = fish$price_ac, time = sim_years)
+
+    q <- generate_timeseries(fleet$q, cv = fleet$q_cv, ac = fleet$q_ac, time = sim_years)
 
   # tune costs based on some heavy fishing at b0
 
@@ -253,7 +252,7 @@ sim_fishery <-
 
    fleet$theta <- (fleet$max_perc_change_f * hyp_effort) / (hyp_profits_guess / hyp_effort)
 
-    cost <- generate_timeseries(fleet$cost, sigma = fleet$cost_cv * fleet$cost, ac = fleet$cost_ac, time = sim_years)
+    cost <- generate_timeseries(fleet$cost, cv = fleet$cost_cv, ac = fleet$cost_ac, time = sim_years)
 
     if (length(q) == 1) {
       q <- rep(q, sim_years)

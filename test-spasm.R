@@ -9,32 +9,33 @@ fish <-
     query_fishlife = T,
     mat_mode = "length",
     time_step = 1,
-    sigma_r = 0,
+    sigma_r = 0.4,
     price = 100,
-    price_cv = 0,
-    price_ac = 0,
+    price_cv = 0.25,
+    price_ac = 0.5,
     steepness = 0.6,
     r0 = 1000,
-    rec_ac = 0,
+    rec_ac = 0.4,
     density_movement_modifier = 0
   )
 
 
 fleet <- create_fleet(
   fish = fish,
-  cost_cv =  0,
-  cost_ac = 0,
-  q_cv = 0,
-  q_ac = 0,
+  cost_cv =  0.25,
+  cost_ac = 0.5,
+  q_cv = 0.25,
+  q_ac = 0.5,
   fleet_model = "open-access",
   sigma_effort = 0,
   length_50_sel = 0.25 * fish$linf,
   initial_effort = 100,
-  profit_lags =  1,
-  beta = 1.1,
+  profit_lags =  0,
+  beta = 2,
   max_cp_ratio = 0.25,
   max_perc_change_f = 0.25
 )
+
 
 sim_noad <- spasm::sim_fishery(
   fish = fish,
@@ -48,6 +49,7 @@ sim_noad <- spasm::sim_fishery(
   random_mpas = F
 )
 
+
  sim_noad %>%
   group_by(year) %>%
   summarise(te = unique(effort),
@@ -58,7 +60,6 @@ sim_noad <- spasm::sim_fishery(
   gather(metric, value, -year) %>%
   ggplot(aes(year, value, color = metric)) +
   geom_line(show.legend = F) +
-   geom_point() +
     facet_wrap(~metric, scales = "free_y")
 
 
