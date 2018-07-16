@@ -46,7 +46,6 @@ estimate_msy <-
       sim_years = sim_years,
       burn_year = burn_year,
       time_step = fish$time_step,
-      tune_costs = F,
       est_msy = F
     )
 
