@@ -15,6 +15,8 @@
 #' generate_timeseries(thing = 2, sigma = .1, ac = 0.5, time = 10)
 generate_timeseries <- function(thing, cv, ac, time){
 
+  # add random walk with drift https://rpubs.com/ericnovik/ar1stan
+
   sigma <- sqrt(log(cv^2 + 1))
 
   if (length(thing) == 1 & sigma > 0){

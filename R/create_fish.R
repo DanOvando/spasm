@@ -78,7 +78,8 @@ create_fish <- function(common_name = 'white seabass',
                         mat_mode = "age",
                         default_wb = 2.8,
                         tune_weight = FALSE,
-                        density_movement_modifier = 1) {
+                        density_movement_modifier = 1,
+                        linf_buffer = 1.2) {
 
 
   fish <- list()
@@ -214,6 +215,23 @@ create_fish <- function(common_name = 'white seabass',
 
   lmat_to_linf_ratio <- length_mature / linf
 
+  #
+
+  length_at_age_key <- generate_length_at_age_key(
+    min_age = min_age,
+    max_age = max_age,
+    cv = cv_len,
+    linf = linf,
+    k = vbk,
+    t0 = t0,
+    time_step = time_step,
+    linf_buffer = linf_buffer
+  ) %>%
+    ungroup() %>%
+    select(age, length_bin, p_bin) %>%
+    spread(length_bin, p_bin) %>%
+    select(-age)
+
   # process maturity
   if ((is.na(age_50_mature) |
        is.na(age_95_mature)) & is.na(age_mature) == F) {
@@ -232,31 +250,16 @@ create_fish <- function(common_name = 'white seabass',
       length_mature <-  linf * lmat_to_linf_ratio
     }
 
-    p_selected <- function(mu, sigma, l50, delta){
+    length_bins <- as.numeric(colnames(length_at_age_key))
 
-      length_dist <- pmax(0,rnorm(1000, mu, sigma))
+    mat_at_bin <- ((1 / (1 + exp(-log(
+      19
+    ) * ((length_bins - length_mature) / (delta_mature)
+    )))))
 
-      sel_dist <-   ((1 / (1 + exp(-log(
-        19
-      ) * ((length_dist - l50) / (delta)
-      )))))
+    p_mat_at_age <- (as.matrix(length_at_age_key) %*% mat_at_bin)
 
-      mean_p_selected <- mean(sel_dist)
-
-    }
-
-mat_at_age <- data_frame(age = 0:max_age) %>%
-  mutate(mean_length_at_age = length_at_age) %>%
-  mutate(sd_at_age = mean_length_at_age * cv_len) %>%
-  mutate(
-    mean_mat_at_age = map2_dbl(
-      mean_length_at_age,
-      sd_at_age,
-      p_selected,
-      l50 = length_mature,
-      delta = delta_mature
-    )
-  )
+    mat_at_age <- data_frame(age = seq(min_age,max_age, by = time_step),mean_mat_at_age = p_mat_at_age)
 
     age_mature <- mat_at_age$age[mat_at_age$mean_mat_at_age >= 0.5][1]
 

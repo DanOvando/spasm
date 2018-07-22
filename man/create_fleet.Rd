@@ -6,11 +6,11 @@
 \usage{
 create_fleet(eq_f = NA, length_50_sel = 1, delta = 2, fish,
   mpa_reaction = "concentrate", cost = 0.1, beta = 1.3, theta = 0.1,
-  q = 0.001, q_cv = 0, q_ac = 0, cost_cv = 0, cost_ac = 0,
-  fleet_model = "constant-effort", effort_allocation = "gravity",
-  cost_function = "constant", cost_slope = 0, tech_rate = 0,
-  initial_effort = 100, target_catch = 0, catches = NA,
-  sigma_effort = 0, profit_lags = 4, theta_tuner = 0.25,
+  max_perc_change_f = 0.2, max_cp_ratio = 0.75, q = 0.001, q_cv = 0,
+  q_ac = 0, cost_cv = 0, cost_ac = 0, fleet_model = "constant-effort",
+  effort_allocation = "gravity", cost_function = "constant",
+  cost_slope = 0, tech_rate = 0, initial_effort = 100, target_catch = 0,
+  catches = NA, sigma_effort = 0, profit_lags = 4, theta_tuner = 0.25,
   oa_ratio = 0.25, mey_buffer = 2, effort_ac = 0)
 }
 \arguments{

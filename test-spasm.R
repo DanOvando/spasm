@@ -5,28 +5,28 @@ library(ggridges)
 
 fish <-
   create_fish(
-    scientific_name = "Lutjanus campechanus",
+    scientific_name = "Atractoscion nobilis",
     query_fishlife = T,
     mat_mode = "length",
     time_step = 1,
-    sigma_r = 0.4,
+    sigma_r = 0.01,
     price = 100,
     price_cv = 0.25,
     price_ac = 0.5,
     steepness = 0.6,
-    r0 = 1000,
-    rec_ac = 0.4,
+    r0 = 4290000,
+    rec_ac = 0,
     density_movement_modifier = 0
   )
 
 
 fleet <- create_fleet(
   fish = fish,
-  cost_cv =  0.25,
-  cost_ac = 0.5,
-  q_cv = 0.25,
-  q_ac = 0.5,
-  fleet_model = "open-access",
+  cost_cv =  0,
+  cost_ac = 0,
+  q_cv = 0,
+  q_ac = 0,
+  fleet_model = "constant-effort",
   sigma_effort = 0,
   length_50_sel = 0.25 * fish$linf,
   initial_effort = 100,
@@ -48,6 +48,14 @@ sim_noad <- spasm::sim_fishery(
   est_msy = F,
   random_mpas = F
 )
+
+
+sim_noad %>%
+  filter(year > 125) %>%
+  ggplot(aes(age, year, height = numbers, group = year)) +
+  geom_density_ridges(stat = "identity") +
+  labs(x = "Length (cm)", title = "Proportional Length Distribution")
+
 
 
  sim_noad %>%

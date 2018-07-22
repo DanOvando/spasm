@@ -5,8 +5,7 @@
 \title{determine_effort}
 \usage{
 determine_effort(last_effort, fleet, fish, y, burn_year, pop, mpa, num_patches,
-  effort_devs, profit_lags = 4, e_msy, p_msy, mey_buffer = 2,
-  previous_max = NA, max_expansion = 1.1)
+  effort_devs, profit_lags = 4, previous_max = NA)
 }
 \arguments{
 \item{last_effort}{effort in the last time period}

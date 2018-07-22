@@ -176,10 +176,17 @@ sim_fishery <-
 
 
     if (rec_driver == "stochastic") {
+      # rec_devs <-
+      #   rnorm(
+      #     sim_years,
+      #     mean = -(fish$sigma_r ^ 2) / 2,
+      #     sd = fish$sigma_r
+      #   )
+
       rec_devs <-
         rnorm(
           sim_years,
-          mean = -(fish$sigma_r ^ 2) / 2,
+          mean = 0,
           sd = fish$sigma_r
         )
 

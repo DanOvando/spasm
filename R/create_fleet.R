@@ -58,36 +58,20 @@ create_fleet <- function(eq_f = NA,
                          oa_ratio = 0.25,
                          mey_buffer = 2,
                          effort_ac = 0) {
-  p_selected <- function(mu, sigma, l50, delta) {
-    length_dist <- pmax(0, rnorm(1000, mu, sigma))
 
-    sel_dist <-   ((1 / (1 + exp(-log(
-      19
-    ) * ((length_dist - l50) / (delta)
-    )))))
 
-    mean_p_selected <- mean(sel_dist)
+  length_bins <- as.numeric(colnames(fish$length_at_age_key))
 
-  }
+  sel_at_bin <- ((1 / (1 + exp(-log(
+    19
+  ) * ((length_bins - length_50_sel) / (delta)
+  )))))
 
-  sel_at_age <-
-    data_frame(age = seq(fish$min_age, fish$max_age, by = fish$time_step)) %>%
-    mutate(mean_length_at_age = fish$length_at_age) %>%
-    mutate(sd_at_age = mean_length_at_age * fish$cv_len) %>%
-    mutate(
-      mean_sel_at_age = map2_dbl(
-        mean_length_at_age,
-        sd_at_age,
-        p_selected,
-        l50 = length_50_sel,
-        delta = delta
-      )
-    )
-
+  p_sel_at_age <- (as.matrix(fish$length_at_age_key) %*% sel_at_bin)
 
   length_95_sel <- (length_50_sel + delta)
 
-  sel_at_age <-  sel_at_age$mean_sel_at_age
+  sel_at_age <- p_sel_at_age
 
   mey_buffer <- mey_buffer
 

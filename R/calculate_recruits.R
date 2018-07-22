@@ -116,7 +116,7 @@ calculate_recruits <-
 
 
     }
-    recruits <- recruits * exp(rec_devs)
+    recruits <- recruits * exp(rec_devs - fish$sigma_r^2/2);
 
     return(recruits)
 

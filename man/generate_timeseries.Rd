@@ -4,16 +4,16 @@
 \alias{generate_timeseries}
 \title{Generate a distribution of values over time}
 \usage{
-generate_timeseries(thing, sigma, ac, time)
+generate_timeseries(thing, cv, ac, time)
 }
 \arguments{
 \item{thing}{the thing to be jittered}
 
-\item{sigma}{the degree of variation}
-
 \item{ac}{the degree of autocorrelation 0-1}
 
 \item{time}{the length of time series to simulate}
+
+\item{sigma}{the degree of variation}
 }
 \value{
 a vector of length time

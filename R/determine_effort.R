@@ -86,8 +86,9 @@ determine_effort <-
       new_effort <-
         last_effort + (fleet$theta * weighted.mean(profits$ppue, profits$year)) * exp(effort_devs[y + 1])
 
-      if (new_effort <= 0) {
-        new_effort = -1 / (new_effort - 1)
+      if (new_effort <= 1e-3) {
+
+        new_effort = 1e-3 / (2 - new_effort / 1e-3)
 
       }
 
