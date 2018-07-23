@@ -13,7 +13,7 @@
 #'
 #' @examples
 #' generate_timeseries(thing = 2, sigma = .1, ac = 0.5, time = 10)
-generate_timeseries <- function(thing, cv, ac, time){
+generate_timeseries <- function(thing, cv, ac, time, percent_slope = 0){
 
   # add random walk with drift https://rpubs.com/ericnovik/ar1stan
 
@@ -24,7 +24,7 @@ generate_timeseries <- function(thing, cv, ac, time){
     thing_devs <-
       rnorm(
         time,
-        mean = -(sigma ^ 2) / 2,
+        mean = 0,
         sd = sigma
       )
 
@@ -34,8 +34,9 @@ generate_timeseries <- function(thing, cv, ac, time){
         thing_devs[t - 1] * ac + sqrt(1 - ac ^ 2) * thing_devs[t]
     }
 
-    thing <- thing * exp(thing_devs)
+    thing_slope <-  thing * percent_slope
 
+    thing <- (thing + thing_slope * (0:(time - 1))) * exp(thing_devs)
   }
 
   return(thing)

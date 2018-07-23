@@ -234,9 +234,9 @@ sim_fishery <-
 
     # generate time series of price, cost, and q if called for
 
-    price_series <- generate_timeseries(fish$price, cv = fish$price_cv, ac = fish$price_ac, time = sim_years)
+    price_series <- generate_timeseries(fish$price, cv = fish$price_cv, ac = fish$price_ac, percent_slope = fish$price_slope, time = sim_years)
 
-    q <- generate_timeseries(fleet$q, cv = fleet$q_cv, ac = fleet$q_ac, time = sim_years)
+    q <- generate_timeseries(fleet$q, cv = fleet$q_cv, ac = fleet$q_ac, percent_slope = fleet$q_slope, time = sim_years)
 
   # tune costs based on some heavy fishing at b0
 
@@ -259,7 +259,7 @@ sim_fishery <-
 
    fleet$theta <- (fleet$max_perc_change_f * hyp_effort) / (hyp_profits_guess / hyp_effort)
 
-    cost_series <- generate_timeseries(fleet$cost, cv = fleet$cost_cv, ac = fleet$cost_ac, time = sim_years)
+    cost_series <- generate_timeseries(fleet$cost, cv = fleet$cost_cv, ac = fleet$cost_ac, percent_slope = fleet$cost_slope, time = sim_years)
 
     if (length(q) == 1) {
       q <- rep(q, sim_years)

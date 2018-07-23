@@ -9,23 +9,26 @@ fish <-
     query_fishlife = T,
     mat_mode = "length",
     time_step = 1,
-    sigma_r = 0.01,
+    sigma_r = 0.2,
     price = 100,
     price_cv = 0.25,
-    price_ac = 0.5,
+    price_ac = .5,
+    price_slope = .025,
     steepness = 0.6,
     r0 = 4290000,
-    rec_ac = 0,
+    rec_ac = .9,
     density_movement_modifier = 0
   )
 
 
 fleet <- create_fleet(
   fish = fish,
-  cost_cv =  0,
+  cost_cv =  0.2,
   cost_ac = 0,
-  q_cv = 0,
-  q_ac = 0,
+  cost_slope = .05,
+  q_cv = .1,
+  q_ac = .7,
+  q_slope = -.1,
   fleet_model = "constant-effort",
   sigma_effort = 0,
   length_50_sel = 0.25 * fish$linf,
@@ -49,6 +52,11 @@ sim_noad <- spasm::sim_fishery(
   random_mpas = F
 )
 
+
+sim_noad %>%
+  mutate(q = f / effort) %>%
+  ggplot(aes(year, q)) +
+  geom_point()
 
 sim_noad %>%
   filter(year > 125) %>%
