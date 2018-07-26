@@ -4,7 +4,7 @@
 \alias{generate_timeseries}
 \title{Generate a distribution of values over time}
 \usage{
-generate_timeseries(thing, cv, ac, time)
+generate_timeseries(thing, cv, ac, time, percent_slope = 0, min_thing = 0)
 }
 \arguments{
 \item{thing}{the thing to be jittered}

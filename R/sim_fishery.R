@@ -238,35 +238,38 @@ sim_fishery <-
 
     q <- generate_timeseries(fleet$q, cv = fleet$q_cv, ac = fleet$q_ac, percent_slope = fleet$q_slope, time = sim_years)
 
-  # tune costs based on some heavy fishing at b0
-
-   hyp_f <- fish$m #hypothetical f
-
-   hyp_effort <- hyp_f / max(q)
-
-   hyp_f_at_age <- hyp_f * fleet$sel_at_age
-
-   hyp_b0_catch <- sum((hyp_f_at_age / (hyp_f_at_age + fish$m))  * b0_at_age * (1 - exp(-(hyp_f_at_age + fish$m))))
-
-   b0_revenue <- max(price_series) * hyp_b0_catch
-
-   hyp_profits_guess <- b0_revenue * (1 - fleet$max_cp_ratio)
-
-   cost_guess <-
-     (b0_revenue - hyp_profits_guess) / hyp_effort ^ fleet$beta
-
-   fleet$cost <- cost_guess
-
-   fleet$theta <- (fleet$max_perc_change_f * hyp_effort) / (hyp_profits_guess / hyp_effort)
-
-    cost_series <- generate_timeseries(fleet$cost, cv = fleet$cost_cv, ac = fleet$cost_ac, percent_slope = fleet$cost_slope, time = sim_years)
-
     if (length(q) == 1) {
       q <- rep(q, sim_years)
     }
     if (length(price_series) == 1) {
       price_series <- rep(price_series, sim_years)
     }
+
+  # tune costs based on some heavy fishing at b0
+
+   hyp_f <- fish$m #hypothetical f
+
+   hyp_effort <- hyp_f / mean(q[(burn_year + 1):sim_years])
+
+   hyp_f_at_age <- hyp_f * fleet$sel_at_age
+
+   hyp_b0_catch <- sum((hyp_f_at_age / (hyp_f_at_age + fish$m))  * b0_at_age * (1 - exp(-(hyp_f_at_age + fish$m))))
+
+   b0_revenue <- mean(price_series[(burn_year + 1):sim_years]) * hyp_b0_catch
+
+   hyp_profits_guess <- b0_revenue * (1 - fleet$max_cp_ratio)
+
+   cost_guess <-
+     (b0_revenue - hyp_profits_guess) / hyp_effort ^ fleet$beta
+
+
+   fleet$theta <- (fleet$max_perc_change_f * hyp_effort) / (hyp_profits_guess / hyp_effort)
+
+    cost_series <- generate_timeseries(cost_guess, cv = fleet$cost_cv, ac = fleet$cost_ac, percent_slope = fleet$cost_slope, time = sim_years)
+
+    cost_series <- (cost_series / max(cost_series)) * cost_guess
+
+    fleet$cost <- cost_guess
 
     price_frame <- data_frame(year = 1:sim_years, price = price_series)
 
