@@ -102,6 +102,11 @@ determine_effort <-
     if (fleet$fleet_model != 'open-access'){
     new_effort <- new_effort * exp(effort_devs[y + 1])
     }
+    if (fleet$fleet_model == "random_walk"){
+
+      new_effort <- last_effort * exp(effort_devs[y + 1])
+
+    }
 
     # new_effort <- pmax(last_effort * (1 - fleet$max_perc_change_f), pmin(new_effort, previous_max * (1 + fleet$max_perc_change_f)))
 

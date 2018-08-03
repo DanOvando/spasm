@@ -88,7 +88,6 @@ create_fish <- function(common_name = 'white seabass',
   if (is.na(scientific_name) == F & query_fishlife == T) {
 
 
-
     genus_species <- stringr::str_split(scientific_name, " ", simplify = T) %>%
       as_data_frame() %>%
       set_names(c("genus", "species"))

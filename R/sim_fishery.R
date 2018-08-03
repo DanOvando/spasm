@@ -445,7 +445,6 @@ sim_fishery <-
         pop[now_year, "effort"] * q[y]
 
       # grow and die -----
-
       pop[pop$year == (y + 1), "numbers"] <-
         pop[now_year, ] %>%
         group_by(patch) %>%

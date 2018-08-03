@@ -4,8 +4,8 @@
 \alias{generate_length_at_age_key}
 \title{generate_length_to_age_key}
 \usage{
-generate_length_at_age_key(min_age, max_age, cv, k, linf, t0, time_step = 1,
-  linf_buffer = 10)
+generate_length_at_age_key(min_age, max_age, cv, k, linf, t0,
+  time_step = 1, linf_buffer = 10)
 }
 \arguments{
 \item{max_age}{}

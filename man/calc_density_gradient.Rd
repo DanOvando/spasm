@@ -4,7 +4,8 @@
 \alias{calc_density_gradient}
 \title{calculate density gradient}
 \usage{
-calc_density_gradient(pop, y, num_patches, density_modifier, b0_buffer = 1.25)
+calc_density_gradient(pop, y, num_patches, density_modifier,
+  b0_buffer = 1.25)
 }
 \arguments{
 \item{density_modifier}{}

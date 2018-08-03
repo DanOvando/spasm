@@ -4,8 +4,8 @@
 \alias{tune_for_depletion}
 \title{Tune for Depletion}
 \usage{
-tune_for_depletion(control_variable, target_depletion, fish, fleet, sim_years,
-  burn_years, num_patches)
+tune_for_depletion(control_variable, target_depletion, fish, fleet,
+  sim_years, burn_years, num_patches)
 }
 \arguments{
 \item{num_patches}{}
