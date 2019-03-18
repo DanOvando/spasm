@@ -1637,3 +1637,41 @@ sim %>%
 
 
 
+# fixing movement
+
+how far is that point from that point? It's the minimum arc length between the two points
+
+so, lets say that you have 10 patches, and you're at patch 9. So that's 324 degrees, which would be 5.654 radians. Now suppose you want the distance to patch 1. Patch one is either at position 0 degrees, or at position 360 degrees. so at 0 radians. ah wait you don't need to mess with radias, dumbass. 
+
+324° × π/180
+
+
+center at mean range
+
+```{r}
+
+n <- 100
+
+move_rate <- .4 * n
+
+out <- expand.grid(from = 1:n, to =1:n) %>% 
+  as.data.frame()
+
+move <- out %>% 
+  mutate(distance = map2_dbl(from,to, ~ min(c(abs(.x - .y),
+                                              .x + n - .y,
+                                              n - .x + .y)), n = n)) 
+
+move <- move %>% 
+  mutate(movement = ifelse(is.finite(dnorm(distance,0,move_rate)),dnorm(distance,0,move_rate),1))  %>% 
+  group_by(from) %>% 
+  mutate(movement = movement / sum(movement))
+
+
+move %>% 
+  ggplot() + 
+  geom_raster(aes(from,to,fill = movement))
+  
+
+```
+

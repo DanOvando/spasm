@@ -9,15 +9,17 @@ fish <-
     query_fishlife = T,
     mat_mode = "length",
     time_step = 1,
-    sigma_r = 0.2,
+    sigma_r = 0,
     price = 100,
     price_cv = 0.25,
     price_ac = .5,
     price_slope = .025,
     steepness = 0.6,
     r0 = 4290000,
-    rec_ac = .9,
-    density_movement_modifier = 0
+    rec_ac = 0,
+    density_movement_modifier = 0,
+    adult_movement = 1,
+    larval_movement = 20
   )
 
 
@@ -28,11 +30,11 @@ fleet <- create_fleet(
   cost_slope = .05,
   q_cv = .1,
   q_ac = .7,
-  q_slope = -.1,
+  q_slope = 0,
   fleet_model = "constant-effort",
   sigma_effort = 0,
-  length_50_sel = 0.25 * fish$linf,
-  initial_effort = 100,
+  length_50_sel = 0.1 * fish$linf,
+  initial_effort = 1000,
   profit_lags =  0,
   beta = 2,
   max_cp_ratio = 0.25,
@@ -44,13 +46,27 @@ sim_noad <- spasm::sim_fishery(
   fish = fish,
   fleet = fleet,
   manager = create_manager(mpa_size = 0.5),
-  num_patches = 1,
+  num_patches = 25,
   sim_years = 100,
   burn_year = 50,
   time_step = fish$time_step,
   est_msy = F,
-  random_mpas = F
+  random_mpas = T
 )
+
+
+sim_noad %>%
+  group_by(year,patch) %>%
+  summarise(biomass = sum(biomass),
+            mpa = unique(mpa)) %>%
+  # complete(biomass, nesting(year,patch), fill = list(biomass = 0)) %>%
+  ungroup() %>%
+  # filter(year == max(year)) %>%
+  ggplot(aes(x = patch, y = biomass, fill = mpa)) +
+  geom_col(color = "transparent") +
+  # geom_area(alpha = 0.5, na.rm = TRUE) +
+  transition_time(year) +
+  ease_aes('linear')
 
 
 sim_noad %>%

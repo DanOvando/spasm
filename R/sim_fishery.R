@@ -308,45 +308,75 @@ sim_fishery <-
 
     model_phase <- "burn"
 
-    adult_move_grid <-
-      expand.grid(
-        source = 1:num_patches,
-        sink = 1:num_patches
-      ) %>%
-      mutate(
-        distance = source - sink,
-        prob = 1 / ((2 * pi) ^ (1 / 2) * fish$adult_movement) * exp(-(distance) ^
-          2 / (2 * fish$adult_movement ^ 2))
-      ) %>%
-      group_by(source) %>%
-      mutate(prob_move = prob / sum(prob))
+    # adult_move_grid <-
+    #   expand.grid(
+    #     source = 1:num_patches,
+    #     sink = 1:num_patches
+    #   ) %>%
+    #   mutate(
+    #     distance = source - sink,
+    #     prob = 1 / ((2 * pi) ^ (1 / 2) * fish$adult_movement) * exp(-(distance) ^
+    #       2 / (2 * fish$adult_movement ^ 2))
+    #   ) %>%
+    #   group_by(source) %>%
+    #   mutate(prob_move = prob / sum(prob))
+
+    adult_move_grid <- expand.grid(from = 1:num_patches, to =1:num_patches) %>%
+      as.data.frame() %>%
+      mutate(distance = purrr::map2_dbl(from,to, ~ min(c(abs(.x - .y),
+                                                         .x + num_patches - .y,
+                                                         num_patches - .x + .y)))) %>%
+      mutate(movement = ifelse(is.finite(dnorm(distance,0,fish$adult_movement)),dnorm(distance,0,fish$adult_movement),1))  %>%
+      group_by(from) %>%
+      mutate(prob_move = movement / sum(movement))
 
     adult_move_matrix <- adult_move_grid %>%
       ungroup() %>%
-      select(source, sink, prob_move) %>%
-      spread(sink, prob_move) %>%
-      select(-source) %>%
+      select(from, to, prob_move) %>%
+      spread(to, prob_move) %>%
+      select(-from) %>%
       as.matrix()
 
     larval_move_grid <-
-      expand.grid(
-        source = 1:num_patches,
-        sink = 1:num_patches
-      ) %>%
-      mutate(
-        distance = source - sink,
-        prob = 1 / ((2 * pi) ^ (1 / 2) * fish$larval_movement) * exp(-(distance) ^
-          2 / (2 * fish$larval_movement ^ 2))
-      ) %>%
-      group_by(source) %>%
-      mutate(prob_move = prob / sum(prob))
+      expand.grid(from = 1:num_patches, to = 1:num_patches) %>%
+      as.data.frame() %>%
+      mutate(distance = purrr::map2_dbl(from, to, ~ min(
+        c(abs(.x - .y),
+          .x + num_patches - .y,
+          num_patches - .x + .y)
+      ))) %>%
+      mutate(movement = ifelse(is.finite(dnorm(
+        distance, 0, fish$larval_movement
+      )), dnorm(distance, 0, fish$larval_movement), 1))  %>%
+      group_by(from) %>%
+      mutate(prob_move = movement / sum(movement))
 
     larval_move_matrix <- larval_move_grid %>%
       ungroup() %>%
-      select(source, sink, prob_move) %>%
-      spread(sink, prob_move) %>%
-      select(-source) %>%
+      select(from, to, prob_move) %>%
+      spread(to, prob_move) %>%
+      select(-from) %>%
       as.matrix()
+
+    # larval_move_grid <-
+    #   expand.grid(
+    #     source = 1:num_patches,
+    #     sink = 1:num_patches
+    #   ) %>%
+    #   mutate(
+    #     distance = source - sink,
+    #     prob = 1 / ((2 * pi) ^ (1 / 2) * fish$larval_movement) * exp(-(distance) ^
+    #       2 / (2 * fish$larval_movement ^ 2))
+    #   ) %>%
+    #   group_by(source) %>%
+    #   mutate(prob_move = prob / sum(prob))
+    #
+    # larval_move_matrix <- larval_move_grid %>%
+    #   ungroup() %>%
+    #   select(source, sink, prob_move) %>%
+    #   spread(sink, prob_move) %>%
+    #   select(-source) %>%
+    #   as.matrix()
 
 
     # eventual_f <- fleet$eq_f
@@ -460,7 +490,6 @@ sim_fishery <-
         {
           .$numbers
         }
-
 
       pop[now_year, "numbers_caught"] <-
         pop[now_year, ] %>%
