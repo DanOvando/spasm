@@ -18,7 +18,7 @@ fish <-
     r0 = 4290000,
     rec_ac = 0,
     density_movement_modifier = 0,
-    adult_movement = 1,
+    adult_movement = 10,
     larval_movement = 20
   )
 
@@ -46,13 +46,20 @@ sim_noad <- spasm::sim_fishery(
   fish = fish,
   fleet = fleet,
   manager = create_manager(mpa_size = 0.5),
-  num_patches = 25,
-  sim_years = 100,
+  num_patches = 50,
+  sim_years = 50,
   burn_year = 50,
   time_step = fish$time_step,
   est_msy = F,
-  random_mpas = T
+  random_mpas = T,
+  min_size = 100
 )
+
+sim_noad %>%
+  group_by(patch) %>%
+  summarise(m = unique(eventual_mpa)) %>%
+  ggplot(aes(patch,m)) +
+  geom_point()
 
 
 sim_noad %>%

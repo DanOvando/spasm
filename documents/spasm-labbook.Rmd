@@ -1675,3 +1675,43 @@ move %>%
 
 ```
 
+
+What would source-sink dynamics look like? I don't really want to deal with advection, since doesn't really mean much in a doughnut system, though I suppose you could make the distribution skewed? But really what's the added value of that, beside making one place a souce instead of spreading it out all over. seems like the lowest hanging fruit is the idea that MPAs provide disproportionate amounts of larvae to other areas.
+
+So one way to do that would be to increase the r0 inside the MPAs, so that protecting those places has a bigger effect on the population, or rather the reproductive capacity inside the MPAs makes up a bigger chunk of the total reproductive potential. 
+
+So maybe call that the habitat MPA hypothesis. 
+
+The other one is a current hypothesis, where something about the oceanography spreads things out a lot more. So, to do that in the most simple manner you can basically just increase the larval movement rate for patches inside the MPAs themselves
+
+lastly, can build in chunky MPAs using rmvtnorm right?
+
+let's mess with that idea a bit
+
+
+```{r}
+
+patches <- 20
+
+mpas <- 10
+
+clustering <- 1
+
+min_size <- min(mpas,clustering)
+
+cwidth <- patches / min_size
+
+out <- tibble(patch = 1:patches) %>% 
+  mutate(cluster = cut(patch,cwidth))
+
+test <- sampling::cluster(out, cluster = "cluster",ceiling(mpas/min_size), method = "srswor")
+
+a <- getdata(out,test) %>% 
+  sample_n(mpas)
+
+plot(1:patches, (1:patches) %in% a$patch)
+
+```
+
+
+

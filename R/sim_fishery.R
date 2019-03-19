@@ -29,7 +29,8 @@ sim_fishery <-
            rec_driver = "stochastic",
            est_msy = F,
            time_step,
-           max_window = 10) {
+           max_window = 10,
+           min_size = 1) {
 
     msy <- NA
 
@@ -413,7 +414,28 @@ sim_fishery <-
         prop_mpas <- floor(num_patches * manager$mpa_size)
 
         if (random_mpas == T) {
-          mpa_locations <- sample(1:num_patches, prop_mpas)
+          # mpa_locations <- sample(1:num_patches, prop_mpas)
+
+          # min_size <- 10
+
+          min_size <- min(prop_mpas,max(1,min_size * num_patches))
+
+          cwidth <- num_patches / min_size
+
+          atemp <- tibble(patch = 1:num_patches) %>%
+            mutate(cluster = cut(patch,cwidth))
+
+          btemp <-
+            sampling::cluster(atemp,
+                              cluster = "cluster",
+                              ceiling(prop_mpas / min_size),
+                              method = "srswor")
+
+          ctemp <- sampling::getdata(atemp,btemp) %>%
+            sample_n(prop_mpas)
+
+          mpa_locations <- ctemp$patch
+
         } else {
           mpa_locations <- (1:num_patches)[0:prop_mpas] #weird zero is in case prop_mpas is zero
         }
