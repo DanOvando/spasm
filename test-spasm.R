@@ -18,8 +18,9 @@ fish <-
     r0 = 4290000,
     rec_ac = 0,
     density_movement_modifier = 0,
-    adult_movement = 10,
-    larval_movement = 20
+    adult_movement = 0,
+    larval_movement = 10,
+    density_dependence_form = 5
   )
 
 
@@ -34,7 +35,7 @@ fleet <- create_fleet(
   fleet_model = "constant-effort",
   sigma_effort = 0,
   length_50_sel = 0.1 * fish$linf,
-  initial_effort = 1000,
+  initial_effort = 10000,
   profit_lags =  0,
   beta = 2,
   max_cp_ratio = 0.25,
@@ -45,14 +46,15 @@ fleet <- create_fleet(
 sim_noad <- spasm::sim_fishery(
   fish = fish,
   fleet = fleet,
-  manager = create_manager(mpa_size = 0.5),
+  manager = create_manager(mpa_size = 0.2),
   num_patches = 50,
   sim_years = 50,
-  burn_year = 50,
+  burn_year = 100,
   time_step = fish$time_step,
   est_msy = F,
-  random_mpas = T,
-  min_size = 100
+  random_mpas = TRUE,
+  min_size = 10,
+  mpa_habfactor = 1
 )
 
 sim_noad %>%

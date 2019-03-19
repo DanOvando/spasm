@@ -30,7 +30,8 @@ sim_fishery <-
            est_msy = F,
            time_step,
            max_window = 10,
-           min_size = 1) {
+           min_size = 1,
+           mpa_habfactor = 1) {
 
     msy <- NA
 
@@ -221,7 +222,40 @@ sim_fishery <-
         effort_devs[t - 1] * fleet$effort_ac + sqrt(1 - fleet$effort_ac ^ 2) * effort_devs[t]
     }
 
-    mpa_locations <- -1
+    # mpa_locations <- -1
+
+    prop_mpas <- floor(num_patches * manager$mpa_size)
+
+    if (random_mpas == T & prop_mpas > 0) {
+      # mpa_locations <- sample(1:num_patches, prop_mpas)
+
+      # min_size <- 10
+
+      min_size <- min(prop_mpas,max(1,min_size * num_patches))
+
+      cwidth <- num_patches / min_size
+
+      atemp <- tibble(patch = 1:num_patches) %>%
+        mutate(cluster = cut(patch,cwidth))
+
+      btemp <-
+        sampling::cluster(atemp,
+                          cluster = "cluster",
+                          ceiling(prop_mpas / min_size),
+                          method = "srswor")
+
+      ctemp <- sampling::getdata(atemp,btemp) %>%
+        sample_n(prop_mpas)
+
+      mpa_locations <- ctemp$patch
+
+    } else {
+      mpa_locations <- (1:num_patches)[0:prop_mpas] #weird zero is in case prop_mpas is zero
+    }
+
+    habitat <- rep(1,num_patches)
+
+    habitat[mpa_locations]  <- mpa_habfactor
 
     n0_at_age <-
       (fish$r0 / num_patches) * exp(-fish$m * seq(fish$min_age, fish$max_age, fish$time_step))
@@ -411,34 +445,6 @@ sim_fishery <-
       # change management
 
       if ((y - burn_year) == manager$year_mpa) {
-        prop_mpas <- floor(num_patches * manager$mpa_size)
-
-        if (random_mpas == T) {
-          # mpa_locations <- sample(1:num_patches, prop_mpas)
-
-          # min_size <- 10
-
-          min_size <- min(prop_mpas,max(1,min_size * num_patches))
-
-          cwidth <- num_patches / min_size
-
-          atemp <- tibble(patch = 1:num_patches) %>%
-            mutate(cluster = cut(patch,cwidth))
-
-          btemp <-
-            sampling::cluster(atemp,
-                              cluster = "cluster",
-                              ceiling(prop_mpas / min_size),
-                              method = "srswor")
-
-          ctemp <- sampling::getdata(atemp,btemp) %>%
-            sample_n(prop_mpas)
-
-          mpa_locations <- ctemp$patch
-
-        } else {
-          mpa_locations <- (1:num_patches)[0:prop_mpas] #weird zero is in case prop_mpas is zero
-        }
 
         pop$mpa[pop$patch %in% mpa_locations & pop$year >= y] <- T
       }
@@ -552,7 +558,8 @@ sim_fishery <-
           num_patches = num_patches,
           phase = model_phase,
           move_matrix = larval_move_matrix,
-          rec_devs = rec_devs[y + 1]
+          rec_devs = rec_devs[y + 1],
+          patch_habitat = habitat
         )
 
 

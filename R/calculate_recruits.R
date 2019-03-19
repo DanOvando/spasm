@@ -21,7 +21,7 @@ calculate_recruits <-
            phase = 'burn',
            move_matrix,
            rec_devs = 0) {
-    if (patch_habitat == 1) {
+    if (length(patch_habitat) == 1) {
       patch_habitat <- rep(patch_habitat, num_patches)
 
       prop_patch_habitat <- ((patch_habitat / sum(patch_habitat)))
