@@ -2,6 +2,7 @@ library(tidyverse)
 library(FishLife)
 library(spasm)
 library(ggridges)
+library(gganimate)
 
 fish <-
   create_fish(
@@ -14,13 +15,13 @@ fish <-
     price_cv = 0.25,
     price_ac = .5,
     price_slope = .025,
-    steepness = 0.6,
+    steepness = 0.9,
     r0 = 4290000,
     rec_ac = 0,
-    density_movement_modifier = 0,
-    adult_movement = 0,
-    larval_movement = 10,
-    density_dependence_form = 5
+    density_movement_modifier = 0.75,
+    adult_movement = 10,
+    larval_movement = 3,
+    density_dependence_form = 2
   )
 
 
@@ -29,13 +30,13 @@ fleet <- create_fleet(
   cost_cv =  0.2,
   cost_ac = 0,
   cost_slope = .05,
-  q_cv = .1,
+  q_cv = 0,
   q_ac = .7,
   q_slope = 0,
   fleet_model = "constant-effort",
   sigma_effort = 0,
   length_50_sel = 0.1 * fish$linf,
-  initial_effort = 10000,
+  initial_effort = 20000,
   profit_lags =  0,
   beta = 2,
   max_cp_ratio = 0.25,
@@ -47,14 +48,15 @@ sim_noad <- spasm::sim_fishery(
   fish = fish,
   fleet = fleet,
   manager = create_manager(mpa_size = 0.2),
-  num_patches = 50,
+  num_patches = 100,
   sim_years = 50,
-  burn_year = 100,
+  burn_year = 1,
   time_step = fish$time_step,
   est_msy = F,
   random_mpas = TRUE,
-  min_size = 10,
-  mpa_habfactor = 1
+  min_size = 2,
+  mpa_habfactor = 1,
+  keep_burn = TRUE
 )
 
 sim_noad %>%
@@ -63,6 +65,21 @@ sim_noad %>%
   ggplot(aes(patch,m)) +
   geom_point()
 
+sim_noad %>%
+  group_by(year,patch) %>%
+  summarise(m = sum(ssb)) %>%
+  ggplot(aes(year,m, color = factor(patch))) +
+  geom_line(show.legend = FALSE)
+
+sim_noad %>%
+  group_by(year,patch) %>%
+  summarise(ssb = sum(ssb),
+            recs = numbers[age == 0]) %>%
+  group_by(patch) %>%
+  mutate(lssb = lag(ssb)) %>%
+  ggplot(aes(lssb,recs)) +
+  geom_line(color = "red") +
+  facet_wrap(~patch)
 
 sim_noad %>%
   group_by(year,patch) %>%
@@ -75,7 +92,8 @@ sim_noad %>%
   geom_col(color = "transparent") +
   # geom_area(alpha = 0.5, na.rm = TRUE) +
   transition_time(year) +
-  ease_aes('linear')
+  ease_aes('linear') +
+  labs(title = 'Year: {frame_time}')
 
 
 sim_noad %>%

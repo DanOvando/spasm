@@ -31,7 +31,8 @@ sim_fishery <-
            time_step,
            max_window = 10,
            min_size = 1,
-           mpa_habfactor = 1) {
+           mpa_habfactor = 1,
+           keep_burn = FALSE) {
 
     msy <- NA
 
@@ -549,7 +550,6 @@ sim_fishery <-
       # spawn ----
 
       # if (is.na(spawning_season) | ((((year) - floor(year))/spawning_season) == 1))
-
       pop$numbers[pop$year == (y + 1) &
         pop$age == fish$min_age] <-
         calculate_recruits(
@@ -581,6 +581,11 @@ sim_fishery <-
     rec_mat <- data_frame(year = 1:sim_years, rec_dev = rec_devs)
 
     enviro_mat <- data_frame(year = 1:sim_years, enviro = enviro)
+
+    if (keep_burn == TRUE){
+
+      burn_year <- -99
+    }
 
     pop <- pop %>%
       left_join(rec_mat, by = "year") %>%

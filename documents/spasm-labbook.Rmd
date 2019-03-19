@@ -1715,3 +1715,21 @@ plot(1:patches, (1:patches) %in% a$patch)
 
 
 
+# updating larval dispersal
+
+
+ok, good catch in here. larval movement is really only coming into place in the dd5 case, which doesn't really seem right to me. In general, seems like the case of larvae not moving at all isn't particularly realistic, and so shouldn't get a whole ton of play, or rather should be controlled by the larval dispersal parameter itself. 
+
+
+So, if you got rid of the movement controlled by the SR relationship itself, that would leave 
+
+1. DD occurs locally, then recruits move
+  - saturated spawning sites? 
+
+2. DD occurs regionally, then recruits move
+  - water column competition / predation
+
+3. Movement, then DD occurs locally
+  - settlement saturation
+
+
