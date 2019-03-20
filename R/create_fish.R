@@ -89,12 +89,11 @@ create_fish <- function(common_name = 'white seabass',
 
 
     genus_species <- stringr::str_split(scientific_name, " ", simplify = T) %>%
-      as_data_frame() %>%
+      as.data.frame() %>%
       set_names(c("genus", "species"))
 
-
     fish_life <- genus_species %>%
-      mutate(life_traits = pmap(list(Genus = genus, Species = species), safely(FishLife::Get_traits)))
+      mutate(life_traits = pmap(list(Genus = genus, Species = species), safely(Get_traits)))
 
     fish_life <- fish_life %>%
       mutate(fish_life_worked = map(life_traits, 'error') %>% map_lgl(is.null)) %>%

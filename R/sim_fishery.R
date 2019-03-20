@@ -29,7 +29,11 @@ sim_fishery <-
            rec_driver = "stochastic",
            est_msy = F,
            time_step,
-           max_window = 10) {
+           max_window = 10,
+           min_size = 1,
+           mpa_habfactor = 1,
+           sprinkler = FALSE,
+           keep_burn = FALSE) {
 
     msy <- NA
 
@@ -140,7 +144,7 @@ sim_fishery <-
 
       fish$msy <- msy
 
-    }
+    } # close if estimate msy
 
     sim_years <- burn_year + sim_years
 
@@ -220,7 +224,40 @@ sim_fishery <-
         effort_devs[t - 1] * fleet$effort_ac + sqrt(1 - fleet$effort_ac ^ 2) * effort_devs[t]
     }
 
-    mpa_locations <- -1
+    # mpa_locations <- -1
+
+    prop_mpas <- floor(num_patches * manager$mpa_size)
+
+    if (random_mpas == T & prop_mpas > 0) {
+      # mpa_locations <- sample(1:num_patches, prop_mpas)
+
+      # min_size <- 10
+
+      ms <- min(prop_mpas,max(1,min_size * num_patches))
+
+      cwidth <- num_patches / ms
+
+      atemp <- tibble(patch = 1:num_patches) %>%
+        mutate(cluster = cut(patch,cwidth))
+
+      btemp <-
+        sampling::cluster(atemp,
+                          cluster = "cluster",
+                          ceiling(prop_mpas / ms),
+                          method = "srswor")
+
+      ctemp <- sampling::getdata(atemp,btemp) %>%
+        sample_n(prop_mpas)
+
+      mpa_locations <- ctemp$patch
+
+    } else {
+      mpa_locations <- (1:num_patches)[0:prop_mpas] #weird zero is in case prop_mpas is zero
+    }
+
+    habitat <- rep(1,num_patches)
+
+    habitat[mpa_locations]  <- mpa_habfactor
 
     n0_at_age <-
       (fish$r0 / num_patches) * exp(-fish$m * seq(fish$min_age, fish$max_age, fish$time_step))
@@ -308,45 +345,86 @@ sim_fishery <-
 
     model_phase <- "burn"
 
-    adult_move_grid <-
-      expand.grid(
-        source = 1:num_patches,
-        sink = 1:num_patches
-      ) %>%
-      mutate(
-        distance = source - sink,
-        prob = 1 / ((2 * pi) ^ (1 / 2) * fish$adult_movement) * exp(-(distance) ^
-          2 / (2 * fish$adult_movement ^ 2))
-      ) %>%
-      group_by(source) %>%
-      mutate(prob_move = prob / sum(prob))
+    # adult_move_grid <-
+    #   expand.grid(
+    #     source = 1:num_patches,
+    #     sink = 1:num_patches
+    #   ) %>%
+    #   mutate(
+    #     distance = source - sink,
+    #     prob = 1 / ((2 * pi) ^ (1 / 2) * fish$adult_movement) * exp(-(distance) ^
+    #       2 / (2 * fish$adult_movement ^ 2))
+    #   ) %>%
+    #   group_by(source) %>%
+    #   mutate(prob_move = prob / sum(prob))
+
+    adult_move_grid <- expand.grid(from = 1:num_patches, to =1:num_patches) %>%
+      as.data.frame() %>%
+      mutate(distance = purrr::map2_dbl(from,to, ~ min(c(abs(.x - .y),
+                                                         .x + num_patches - .y,
+                                                         num_patches - .x + .y)))) %>%
+      mutate(movement = ifelse(is.finite(dnorm(distance,0,fish$adult_movement)),dnorm(distance,0,fish$adult_movement),1))  %>%
+      group_by(from) %>%
+      mutate(prob_move = movement / sum(movement))
 
     adult_move_matrix <- adult_move_grid %>%
       ungroup() %>%
-      select(source, sink, prob_move) %>%
-      spread(sink, prob_move) %>%
-      select(-source) %>%
+      select(from, to, prob_move) %>%
+      spread(to, prob_move) %>%
+      select(-from) %>%
       as.matrix()
 
     larval_move_grid <-
-      expand.grid(
-        source = 1:num_patches,
-        sink = 1:num_patches
-      ) %>%
+      expand.grid(from = 1:num_patches, to = 1:num_patches) %>%
+      as.data.frame() %>%
+      mutate(distance = purrr::map2_dbl(from, to, ~ min(
+        c(abs(.x - .y),
+          .x + num_patches - .y,
+          num_patches - .x + .y)
+      ))) %>%
       mutate(
-        distance = source - sink,
-        prob = 1 / ((2 * pi) ^ (1 / 2) * fish$larval_movement) * exp(-(distance) ^
-          2 / (2 * fish$larval_movement ^ 2))
-      ) %>%
-      group_by(source) %>%
-      mutate(prob_move = prob / sum(prob))
+        larval_movement = ifelse(
+          from %in% mpa_locations &
+            sprinkler != FALSE,
+          fish$larval_movement * sprinkler,
+          fish$larval_movement
+        )
+      )
+
+
+    larval_move_grid <-  larval_move_grid %>%
+      mutate(movement = ifelse(is.finite(dnorm(
+        distance, 0, fish$larval_movement
+      )), dnorm(distance, 0,larval_movement), 1))  %>%
+      group_by(from) %>%
+      mutate(prob_move = movement / sum(movement))
 
     larval_move_matrix <- larval_move_grid %>%
       ungroup() %>%
-      select(source, sink, prob_move) %>%
-      spread(sink, prob_move) %>%
-      select(-source) %>%
+      select(from, to, prob_move) %>%
+      spread(to, prob_move) %>%
+      select(-from) %>%
       as.matrix()
+
+    # larval_move_grid <-
+    #   expand.grid(
+    #     source = 1:num_patches,
+    #     sink = 1:num_patches
+    #   ) %>%
+    #   mutate(
+    #     distance = source - sink,
+    #     prob = 1 / ((2 * pi) ^ (1 / 2) * fish$larval_movement) * exp(-(distance) ^
+    #       2 / (2 * fish$larval_movement ^ 2))
+    #   ) %>%
+    #   group_by(source) %>%
+    #   mutate(prob_move = prob / sum(prob))
+    #
+    # larval_move_matrix <- larval_move_grid %>%
+    #   ungroup() %>%
+    #   select(source, sink, prob_move) %>%
+    #   spread(sink, prob_move) %>%
+    #   select(-source) %>%
+    #   as.matrix()
 
 
     # eventual_f <- fleet$eq_f
@@ -367,6 +445,7 @@ sim_fishery <-
       }
 
       if (num_patches > 1) {
+
       pop[now_year &
         pop$age > fish$min_age, ] <-
         move_fish(
@@ -380,13 +459,6 @@ sim_fishery <-
       # change management
 
       if ((y - burn_year) == manager$year_mpa) {
-        prop_mpas <- floor(num_patches * manager$mpa_size)
-
-        if (random_mpas == T) {
-          mpa_locations <- sample(1:num_patches, prop_mpas)
-        } else {
-          mpa_locations <- (1:num_patches)[0:prop_mpas] #weird zero is in case prop_mpas is zero
-        }
 
         pop$mpa[pop$patch %in% mpa_locations & pop$year >= y] <- T
       }
@@ -461,7 +533,6 @@ sim_fishery <-
           .$numbers
         }
 
-
       pop[now_year, "numbers_caught"] <-
         pop[now_year, ] %>%
         group_by(patch) %>%
@@ -492,7 +563,6 @@ sim_fishery <-
       # spawn ----
 
       # if (is.na(spawning_season) | ((((year) - floor(year))/spawning_season) == 1))
-
       pop$numbers[pop$year == (y + 1) &
         pop$age == fish$min_age] <-
         calculate_recruits(
@@ -501,7 +571,8 @@ sim_fishery <-
           num_patches = num_patches,
           phase = model_phase,
           move_matrix = larval_move_matrix,
-          rec_devs = rec_devs[y + 1]
+          rec_devs = rec_devs[y + 1],
+          patch_habitat = habitat
         )
 
 
@@ -523,6 +594,11 @@ sim_fishery <-
     rec_mat <- data_frame(year = 1:sim_years, rec_dev = rec_devs)
 
     enviro_mat <- data_frame(year = 1:sim_years, enviro = enviro)
+
+    if (keep_burn == TRUE){
+
+      burn_year <- -99
+    }
 
     pop <- pop %>%
       left_join(rec_mat, by = "year") %>%

@@ -1637,3 +1637,99 @@ sim %>%
 
 
 
+# fixing movement
+
+how far is that point from that point? It's the minimum arc length between the two points
+
+so, lets say that you have 10 patches, and you're at patch 9. So that's 324 degrees, which would be 5.654 radians. Now suppose you want the distance to patch 1. Patch one is either at position 0 degrees, or at position 360 degrees. so at 0 radians. ah wait you don't need to mess with radias, dumbass. 
+
+324° × π/180
+
+
+center at mean range
+
+```{r}
+
+n <- 100
+
+move_rate <- .4 * n
+
+out <- expand.grid(from = 1:n, to =1:n) %>% 
+  as.data.frame()
+
+move <- out %>% 
+  mutate(distance = map2_dbl(from,to, ~ min(c(abs(.x - .y),
+                                              .x + n - .y,
+                                              n - .x + .y)), n = n)) 
+
+move <- move %>% 
+  mutate(movement = ifelse(is.finite(dnorm(distance,0,move_rate)),dnorm(distance,0,move_rate),1))  %>% 
+  group_by(from) %>% 
+  mutate(movement = movement / sum(movement))
+
+
+move %>% 
+  ggplot() + 
+  geom_raster(aes(from,to,fill = movement))
+  
+
+```
+
+
+What would source-sink dynamics look like? I don't really want to deal with advection, since doesn't really mean much in a doughnut system, though I suppose you could make the distribution skewed? But really what's the added value of that, beside making one place a souce instead of spreading it out all over. seems like the lowest hanging fruit is the idea that MPAs provide disproportionate amounts of larvae to other areas.
+
+So one way to do that would be to increase the r0 inside the MPAs, so that protecting those places has a bigger effect on the population, or rather the reproductive capacity inside the MPAs makes up a bigger chunk of the total reproductive potential. 
+
+So maybe call that the habitat MPA hypothesis. 
+
+The other one is a current hypothesis, where something about the oceanography spreads things out a lot more. So, to do that in the most simple manner you can basically just increase the larval movement rate for patches inside the MPAs themselves
+
+lastly, can build in chunky MPAs using rmvtnorm right?
+
+let's mess with that idea a bit
+
+
+```{r}
+
+patches <- 20
+
+mpas <- 10
+
+clustering <- 1
+
+min_size <- min(mpas,clustering)
+
+cwidth <- patches / min_size
+
+out <- tibble(patch = 1:patches) %>% 
+  mutate(cluster = cut(patch,cwidth))
+
+test <- sampling::cluster(out, cluster = "cluster",ceiling(mpas/min_size), method = "srswor")
+
+a <- getdata(out,test) %>% 
+  sample_n(mpas)
+
+plot(1:patches, (1:patches) %in% a$patch)
+
+```
+
+
+
+# updating larval dispersal
+
+
+ok, good catch in here. larval movement is really only coming into place in the dd5 case, which doesn't really seem right to me. In general, seems like the case of larvae not moving at all isn't particularly realistic, and so shouldn't get a whole ton of play, or rather should be controlled by the larval dispersal parameter itself. 
+
+
+So, if you got rid of the movement controlled by the SR relationship itself, that would leave 
+
+1. DD occurs locally, then recruits move
+  - saturated spawning sites? 
+
+2. DD occurs regionally, then recruits move
+  - water column competition / predation
+
+3. Movement, then DD occurs locally
+  - settlement saturation
+
+
