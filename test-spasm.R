@@ -33,7 +33,8 @@ fleet <- create_fleet(
   q_cv = 0,
   q_ac = .7,
   q_slope = 0,
-  fleet_model = "open-access",
+  fleet_model = "constant-catch",
+  target_catch = 200,
   sigma_effort = 0,
   length_50_sel = 0.1 * fish$linf,
   initial_effort = 200,
@@ -65,13 +66,28 @@ sim_noad %>%
   group_by(year, patch) %>%
   summarise(te = sum(effort),
             profits = sum(profits),
-            biomass = sum(biomass)) %>%
+            biomass = sum(biomass),
+            tc = sum(biomass_caught)) %>%
   ungroup() %>%
   mutate(ppue = profits / te) %>%
   gather(metric, value, -year,-patch) %>%
   ggplot(aes(year, value, color = factor(patch))) +
   geom_line(show.legend = F) +
   facet_wrap(~metric, scales = "free_y")
+
+sim_noad %>%
+  group_by(year) %>%
+  summarise(te = sum(effort),
+            profits = sum(profits),
+            biomass = sum(biomass),
+            tc = sum(biomass_caught)) %>%
+  ungroup() %>%
+  mutate(ppue = profits / te) %>%
+  gather(metric, value, -year) %>%
+  ggplot(aes(year, value)) +
+  geom_line(show.legend = F) +
+  facet_wrap(~metric, scales = "free_y")
+
 
 
 sim_noad %>%
