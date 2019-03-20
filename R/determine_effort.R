@@ -76,15 +76,17 @@ determine_effort <-
 
 
     if (fleet$fleet_model == 'open-access') {
+
       profits <- pop %>%
         filter(year >= (y - (1 + profit_lags)), year < y) %>%
         group_by(year) %>%
         summarise(profits = sum(profits),
-                  effort = unique(effort)) %>%
+                  effort = sum(effort)) %>%
         mutate(ppue = profits / (effort + 1e-6))
 
       new_effort <-
         last_effort + (fleet$theta * weighted.mean(profits$ppue, profits$year)) * exp(effort_devs[y + 1])
+
 
       if (new_effort <= 1e-3) {
 

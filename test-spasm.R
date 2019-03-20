@@ -11,53 +11,84 @@ fish <-
     mat_mode = "length",
     time_step = 1,
     sigma_r = 0,
-    price = 100,
-    price_cv = 0.25,
-    price_ac = .5,
-    price_slope = .025,
+    price = 10,
+    price_cv = 0,
+    price_ac = 0,
+    price_slope = 0,
     steepness = 0.9,
     r0 = 4290000,
     rec_ac = 0,
-    density_movement_modifier = 0.75,
-    adult_movement = 10,
+    density_movement_modifier = 0,
+    adult_movement = 3,
     larval_movement = 3,
-    density_dependence_form = 2
+    density_dependence_form = 3
   )
 
 
 fleet <- create_fleet(
   fish = fish,
-  cost_cv =  0.2,
+  cost_cv =  0,
   cost_ac = 0,
-  cost_slope = .05,
+  cost_slope = 0,
   q_cv = 0,
   q_ac = .7,
   q_slope = 0,
-  fleet_model = "constant-effort",
+  fleet_model = "open-access",
   sigma_effort = 0,
   length_50_sel = 0.1 * fish$linf,
-  initial_effort = 20000,
-  profit_lags =  0,
+  initial_effort = 200,
+  profit_lags =  5,
   beta = 2,
-  max_cp_ratio = 0.25,
-  max_perc_change_f = 0.25
+  max_cp_ratio = 0.9,
+  max_perc_change_f = 0.5,
+  effort_allocation = 'profit-gravity'
 )
 
 
 sim_noad <- spasm::sim_fishery(
   fish = fish,
   fleet = fleet,
-  manager = create_manager(mpa_size = 0.2),
-  num_patches = 100,
-  sim_years = 50,
-  burn_year = 1,
+  manager = create_manager(mpa_size = 0.4, year_mpa = 30),
+  num_patches = 20,
+  sim_years = 100,
+  burn_year = 50,
   time_step = fish$time_step,
-  est_msy = F,
+  est_msy = T,
   random_mpas = TRUE,
-  min_size = 2,
-  mpa_habfactor = 1,
-  keep_burn = TRUE
+  min_size = 0.05,
+  mpa_habfactor = 2,
+  sprinkler = TRUE,
+  keep_burn = FALSE
 )
+
+sim_noad %>%
+  group_by(year, patch) %>%
+  summarise(te = sum(effort),
+            profits = sum(profits),
+            biomass = sum(biomass)) %>%
+  ungroup() %>%
+  mutate(ppue = profits / te) %>%
+  gather(metric, value, -year,-patch) %>%
+  ggplot(aes(year, value, color = factor(patch))) +
+  geom_line(show.legend = F) +
+  facet_wrap(~metric, scales = "free_y")
+
+
+sim_noad %>%
+  group_by(year,patch) %>%
+  summarise(biomass = sum(biomass),
+            mpa = unique(mpa),
+            effort = sum(effort)) %>%
+  # complete(biomass, nesting(year,patch), fill = list(biomass = 0)) %>%
+  ungroup() %>%
+  # filter(year == max(year)) %>%
+  ggplot(aes(x = patch, y = effort, fill = mpa)) +
+  geom_col(color = "transparent") +
+  # geom_area(alpha = 0.5, na.rm = TRUE) +
+  transition_time(year) +
+  ease_aes('linear') +
+  labs(title = 'Year: {frame_time}')
+
 
 sim_noad %>%
   group_by(patch) %>%
@@ -101,25 +132,20 @@ sim_noad %>%
   ggplot(aes(year, q)) +
   geom_point()
 
+
 sim_noad %>%
-  filter(year > 125) %>%
+  group_by(year) %>%
+  summarise(te = sum(effort)) %>%
+  ungroup() %>%
+  ggplot(aes(year, te)) +
+  geom_line()
+
+sim_noad %>%
   ggplot(aes(age, year, height = numbers, group = year)) +
   geom_density_ridges(stat = "identity") +
   labs(x = "Length (cm)", title = "Proportional Length Distribution")
 
 
-
- sim_noad %>%
-  group_by(year) %>%
-  summarise(te = unique(effort),
-            profits = sum(profits),
-            biomass = sum(biomass)) %>%
-  ungroup() %>%
-  mutate(ppue = profits / te) %>%
-  gather(metric, value, -year) %>%
-  ggplot(aes(year, value, color = metric)) +
-  geom_line(show.legend = F) +
-    facet_wrap(~metric, scales = "free_y")
 
 
 fish <-

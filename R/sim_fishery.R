@@ -32,6 +32,7 @@ sim_fishery <-
            max_window = 10,
            min_size = 1,
            mpa_habfactor = 1,
+           sprinkler = FALSE,
            keep_burn = FALSE) {
 
     msy <- NA
@@ -143,7 +144,7 @@ sim_fishery <-
 
       fish$msy <- msy
 
-    }
+    } # close if estimate msy
 
     sim_years <- burn_year + sim_years
 
@@ -232,9 +233,9 @@ sim_fishery <-
 
       # min_size <- 10
 
-      min_size <- min(prop_mpas,max(1,min_size * num_patches))
+      ms <- min(prop_mpas,max(1,min_size * num_patches))
 
-      cwidth <- num_patches / min_size
+      cwidth <- num_patches / ms
 
       atemp <- tibble(patch = 1:num_patches) %>%
         mutate(cluster = cut(patch,cwidth))
@@ -242,7 +243,7 @@ sim_fishery <-
       btemp <-
         sampling::cluster(atemp,
                           cluster = "cluster",
-                          ceiling(prop_mpas / min_size),
+                          ceiling(prop_mpas / ms),
                           method = "srswor")
 
       ctemp <- sampling::getdata(atemp,btemp) %>%
@@ -381,9 +382,20 @@ sim_fishery <-
           .x + num_patches - .y,
           num_patches - .x + .y)
       ))) %>%
+      mutate(
+        larval_movement = ifelse(
+          from %in% mpa_locations &
+            sprinkler != FALSE,
+          fish$larval_movement * sprinkler,
+          fish$larval_movement
+        )
+      )
+
+
+    larval_move_grid <-  larval_move_grid %>%
       mutate(movement = ifelse(is.finite(dnorm(
         distance, 0, fish$larval_movement
-      )), dnorm(distance, 0, fish$larval_movement), 1))  %>%
+      )), dnorm(distance, 0,larval_movement), 1))  %>%
       group_by(from) %>%
       mutate(prob_move = movement / sum(movement))
 
@@ -433,6 +445,7 @@ sim_fishery <-
       }
 
       if (num_patches > 1) {
+
       pop[now_year &
         pop$age > fish$min_age, ] <-
         move_fish(

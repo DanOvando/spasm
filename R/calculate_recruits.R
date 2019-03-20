@@ -38,6 +38,12 @@ calculate_recruits <-
     if (phase == 'burn') {
       recruits <-
         rep(fish$r0, num_patches) * prop_patch_habitat
+      if (fish$density_dependence_form != 2){
+
+        recruits <- crossprod(recruits, move_matrix)
+
+        }
+
     } else {
       if (fish$density_dependence_form == 1) {
         # Recruitment is independent in each area, but a fraction of the recruits in each area drift to the adjacent areas before settling
