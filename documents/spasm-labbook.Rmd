@@ -1733,3 +1733,204 @@ So, if you got rid of the movement controlled by the SR relationship itself, tha
   - settlement saturation
 
 
+# WHAT DO DO about open access
+
+you need to figure out a lasting solution to this. The basic problem: really really hard to automate the open access model so it gets to where you want it to go and doesn't go crazy along the way. 
+
+A few solutions
+
+1. Tune the nuisance parameters, like r0, 1, beta, etc. and find a combination of those that seems to work pretty well, and just lock that in. 
+
+2. Go with the current approach of tuning both the cost to revenue ratio and the expansion parameter. The downside here is the model tends to solve this problem by just making a staright line, i.e. dampening the expansion parameter enough to ensure you get the outcome you want. Works, but doesnt' really capture the "open-accses" idea, in that it responds to profits so slowly that especially over the short term it isn't really that interesting. 
+
+3. drop open access - not really into that
+
+4. think about some kind of dampening function, I would think the running mean would do that, but maybe try out longer lags, and not using a weighted mean
+
+
+5. do some paper digging for better open access models, though I kind of doubt it. 
+
+
+6. try starting at a higher initial effort. 
+
+OK, seems like just messing with the parameters settles things down pretty well. 
+
+this config works. Getting rid of the smoothed profits, keeping beta at 1, and not capping the max expansion too much seem to do the trick pretty well. setting max expansion at about 2 helps, and seems to let you overfish and underfish. 
+
+next step is to test with tuning.
+
+```{r}
+library(tidyverse)
+library(FishLife)
+library(spasm)
+library(ggridges)
+library(sampling)
+library(gganimate)
+
+fish <-
+  create_fish(
+    scientific_name = "Atractoscion nobilis",
+    query_fishlife = T,
+    mat_mode = "length",
+    time_step = 1,
+    sigma_r = 0,
+    price = 10,
+    price_cv = 0,
+    price_ac = 0,
+    price_slope = 0,
+    steepness = 0.9,
+    r0 = 100,
+    rec_ac = 0,
+    density_movement_modifier = 0,
+    adult_movement = 3,
+    larval_movement = 3,
+    density_dependence_form = 3
+  )
+
+
+
+
+fleet <- create_fleet(
+  fish = fish,
+  cost_cv =  0,
+  cost_ac = 0,
+  cost_slope = 0,
+  q_cv = 0,
+  q_ac = .7,
+  q_slope = 0,
+  fleet_model = "open-access",
+  target_catch = 200,
+  sigma_effort = 0,
+  length_50_sel = 0.1 * fish$linf,
+  initial_effort = 1000,
+  profit_lags =  1,
+  beta = 1,
+  max_cr_ratio = 0.8,
+  max_perc_change_f = 2,
+  effort_allocation = 'profit-gravity',
+  b_ref_oa = .9
+)
+
+
+# huh <- map_dbl(seq(0.01,0.7, by = 0.025), estimate_costs, fish = fish,
+#                fleet = fleet,
+#                b_ref_oa = pmax(.05,(2 - f_v_m) / 2),
+#                lags = 10,
+#                num_patches = 50,
+#                sim_years = 50,
+#                burn_years = 1
+# )
+
+
+a <- Sys.time()
+sim_noad <- spasm::sim_fishery(
+  fish = fish,
+  fleet = fleet,
+  manager = create_manager(mpa_size = 0, year_mpa = 30),
+  num_patches = 50,
+  sim_years = 50,
+  burn_years = 1,
+  time_step = fish$time_step,
+  est_msy = FALSE,
+  random_mpas = TRUE,
+  min_size = 0.05,
+  mpa_habfactor = 1,
+  sprinkler = FALSE,
+  keep_burn = FALSE,
+  tune_costs = FALSE
+)
+Sys.time() - a
+plot_spasm(sim_noad)
+```
+
+
+ok, now test tuning
+
+
+```{r}
+library(tidyverse)
+library(FishLife)
+library(spasm)
+library(ggridges)
+library(sampling)
+library(gganimate)
+
+fish <-
+  create_fish(
+    scientific_name = "Atractoscion nobilis",
+    query_fishlife = T,
+    mat_mode = "length",
+    time_step = 1,
+    sigma_r = 0,
+    price = 10,
+    price_cv = 0,
+    price_ac = 0,
+    price_slope = 0,
+    steepness = 0.9,
+    r0 = 100,
+    rec_ac = 0,
+    density_movement_modifier = 0,
+    adult_movement = 3,
+    larval_movement = 3,
+    density_dependence_form = 3
+  )
+
+
+f_v_m <- 0.2
+
+fleet <- create_fleet(
+  fish = fish,
+  cost_cv =  0,
+  cost_ac = 0,
+  cost_slope = 0,
+  q_cv = 0,
+  q_ac = .7,
+  q_slope = 0,
+  fleet_model = "open-access",
+  target_catch = 200,
+  sigma_effort = 0,
+  length_50_sel = 0.2 * fish$length_50_mature,
+  initial_effort = 1000,
+  profit_lags =  1,
+  beta = 1,
+  max_cr_ratio = 0.8,
+  max_perc_change_f = 2,
+  effort_allocation = 'simple',
+  b_ref_oa = pmax(.05,(2 - f_v_m) / 2)
+)
+
+
+# huh <- map_dbl(seq(0.01,0.7, by = 0.025), estimate_costs, fish = fish,
+#                fleet = fleet,
+#                b_ref_oa = pmax(.05,(2 - f_v_m) / 2),
+#                lags = 10,
+#                num_patches = 50,
+#                sim_years = 50,
+#                burn_years = 1
+# )
+
+
+a <- Sys.time()
+sim_noad <- spasm::sim_fishery(
+  fish = fish,
+  fleet = fleet,
+  manager = create_manager(mpa_size = 0.4, year_mpa = 30),
+  num_patches = 50,
+  sim_years = 50,
+  burn_years = 50,
+  time_step = fish$time_step,
+  est_msy = FALSE,
+  random_mpas = TRUE,
+  min_size = 0.05,
+  mpa_habfactor = 4,
+  sprinkler = TRUE,
+  keep_burn = FALSE,
+  tune_costs = TRUE
+)
+Sys.time() - a
+plot_spasm(sim_noad)
+```
+
+
+
+

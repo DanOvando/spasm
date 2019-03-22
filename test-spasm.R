@@ -2,6 +2,7 @@ library(tidyverse)
 library(FishLife)
 library(spasm)
 library(ggridges)
+library(sampling)
 library(gganimate)
 
 fish <-
@@ -16,13 +17,15 @@ fish <-
     price_ac = 0,
     price_slope = 0,
     steepness = 0.9,
-    r0 = 4290000,
+    r0 = 100,
     rec_ac = 0,
     density_movement_modifier = 0,
     adult_movement = 3,
     larval_movement = 3,
     density_dependence_form = 3
   )
+
+
 
 
 fleet <- create_fleet(
@@ -33,68 +36,82 @@ fleet <- create_fleet(
   q_cv = 0,
   q_ac = .7,
   q_slope = 0,
-  fleet_model = "constant-catch",
+  fleet_model = "open-access",
   target_catch = 200,
   sigma_effort = 0,
   length_50_sel = 0.1 * fish$linf,
-  initial_effort = 200,
-  profit_lags =  5,
-  beta = 2,
-  max_cp_ratio = 0.9,
-  max_perc_change_f = 0.5,
-  effort_allocation = 'profit-gravity'
+  initial_effort = 1000,
+  profit_lags =  1,
+  beta = 1,
+  max_cr_ratio = 0.8,
+  max_perc_change_f = 2,
+  effort_allocation = 'profit-gravity',
+  b_ref_oa = .9
 )
 
 
+
+a <- Sys.time()
 sim_noad <- spasm::sim_fishery(
   fish = fish,
   fleet = fleet,
-  manager = create_manager(mpa_size = 0.4, year_mpa = 30),
-  num_patches = 20,
-  sim_years = 100,
-  burn_year = 50,
+  manager = create_manager(mpa_size = 0, year_mpa = 30),
+  num_patches = 50,
+  sim_years = 50,
+  burn_years = 1,
   time_step = fish$time_step,
-  est_msy = T,
+  est_msy = FALSE,
   random_mpas = TRUE,
   min_size = 0.05,
-  mpa_habfactor = 2,
-  sprinkler = TRUE,
-  keep_burn = FALSE
+  mpa_habfactor = 1,
+  sprinkler = FALSE,
+  keep_burn = FALSE,
+  tune_costs = FALSE
 )
+Sys.time() - a
+plot_spasm(sim_noad)
+b = plot_spasm(sim_noad)
+a = plot_spasm(sim_noad)
 
 sim_noad %>%
   group_by(year, patch) %>%
-  summarise(te = sum(effort),
-            profits = sum(profits),
-            biomass = sum(biomass),
-            tc = sum(biomass_caught)) %>%
+  summarise(
+    te = sum(effort),
+    profits = sum(profits),
+    biomass = sum(biomass),
+    tc = sum(biomass_caught)
+  ) %>%
   ungroup() %>%
   mutate(ppue = profits / te) %>%
-  gather(metric, value, -year,-patch) %>%
+  gather(metric, value,-year, -patch) %>%
   ggplot(aes(year, value, color = factor(patch))) +
   geom_line(show.legend = F) +
-  facet_wrap(~metric, scales = "free_y")
+  facet_wrap( ~ metric, scales = "free_y")
 
 sim_noad %>%
   group_by(year) %>%
-  summarise(te = sum(effort),
-            profits = sum(profits),
-            biomass = sum(biomass),
-            tc = sum(biomass_caught)) %>%
+  summarise(
+    te = sum(effort),
+    profits = sum(profits),
+    biomass = sum(biomass),
+    tc = sum(biomass_caught)
+  ) %>%
   ungroup() %>%
   mutate(ppue = profits / te) %>%
-  gather(metric, value, -year) %>%
+  gather(metric, value,-year) %>%
   ggplot(aes(year, value)) +
   geom_line(show.legend = F) +
-  facet_wrap(~metric, scales = "free_y")
+  facet_wrap( ~ metric, scales = "free_y")
 
 
 
 sim_noad %>%
-  group_by(year,patch) %>%
-  summarise(biomass = sum(biomass),
-            mpa = unique(mpa),
-            effort = sum(effort)) %>%
+  group_by(year, patch) %>%
+  summarise(
+    biomass = sum(biomass),
+    mpa = unique(mpa),
+    effort = sum(effort)
+  ) %>%
   # complete(biomass, nesting(year,patch), fill = list(biomass = 0)) %>%
   ungroup() %>%
   # filter(year == max(year)) %>%
@@ -109,27 +126,27 @@ sim_noad %>%
 sim_noad %>%
   group_by(patch) %>%
   summarise(m = unique(eventual_mpa)) %>%
-  ggplot(aes(patch,m)) +
+  ggplot(aes(patch, m)) +
   geom_point()
 
 sim_noad %>%
-  group_by(year,patch) %>%
+  group_by(year, patch) %>%
   summarise(m = sum(ssb)) %>%
-  ggplot(aes(year,m, color = factor(patch))) +
+  ggplot(aes(year, m, color = factor(patch))) +
   geom_line(show.legend = FALSE)
 
 sim_noad %>%
-  group_by(year,patch) %>%
+  group_by(year, patch) %>%
   summarise(ssb = sum(ssb),
             recs = numbers[age == 0]) %>%
   group_by(patch) %>%
   mutate(lssb = lag(ssb)) %>%
-  ggplot(aes(lssb,recs)) +
+  ggplot(aes(lssb, recs)) +
   geom_line(color = "red") +
-  facet_wrap(~patch)
+  facet_wrap( ~ patch)
 
 sim_noad %>%
-  group_by(year,patch) %>%
+  group_by(year, patch) %>%
   summarise(biomass = sum(biomass),
             mpa = unique(mpa)) %>%
   # complete(biomass, nesting(year,patch), fill = list(biomass = 0)) %>%
@@ -230,5 +247,11 @@ noad %>%
   bind_rows(ad) %>%
   ungroup() %>%
   filter(year > 140) %>%
-  ggplot(aes(patch, year, height = b, group =interaction(year,adult_density_effect) , fill = adult_density_effect)) +
+  ggplot(aes(
+    patch,
+    year,
+    height = b,
+    group = interaction(year, adult_density_effect) ,
+    fill = adult_density_effect
+  )) +
   geom_density_ridges(stat = "identity", alpha = 0.5)

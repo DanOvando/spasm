@@ -13,7 +13,7 @@ distribute_fleet <-
            effort,
            prior_profits,
            year,
-           burn_year,
+           burn_years,
            fleet,
            num_patches,
            mpa) {
@@ -40,7 +40,7 @@ distribute_fleet <-
 
     if (fleet$effort_allocation == 'profit-gravity') {
       if (all(is.na(prior_profits[pop$mpa == F])) |
-          year <= burn_year | all(prior_profits[pop$mpa == F] == 0))
+          year <= burn_years | all(prior_profits[pop$mpa == F] == 0))
       {
 
          ssb_by_patch <-  pop %>%

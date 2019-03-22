@@ -25,6 +25,7 @@ estimate_msy <-
            use = "fit",
            seed = 42) {
 
+
      fleet <-
       spasm::update_fleet(
         fleet = purrr::list_modify(
