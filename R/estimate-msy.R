@@ -18,7 +18,7 @@ estimate_msy <-
            fish,
            fleet,
            sim_years = 25,
-           burn_year = 25,
+           burn_years = 25,
            mpa_size = 0,
            mpa_year = 100,
            num_patches = 1,
@@ -45,7 +45,7 @@ estimate_msy <-
       manager = create_manager(mpa_size = 0),
       num_patches = num_patches,
       sim_years = sim_years,
-      burn_year = burn_year,
+      burn_years = burn_years,
       time_step = fish$time_step,
       est_msy = F
     )
