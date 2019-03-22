@@ -7,7 +7,7 @@
 #' @param fleet the fleet object
 #' @param fish the fish object
 #' @param y the current year
-#' @param burn_yearss the last year of the burn period
+#' @param burn_years the last year of the burn period
 #' @param pop the population object
 #' @param mpa the mpa object
 #' @param num_patches the number of patches in the system
@@ -20,7 +20,7 @@ determine_effort <-
            fleet,
            fish,
            y,
-           burn_yearss,
+           burn_years,
            pop,
            mpa,
            num_patches,

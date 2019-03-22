@@ -1870,7 +1870,7 @@ fish <-
     r0 = 100,
     rec_ac = 0,
     density_movement_modifier = 0,
-    adult_movement = 3,
+    adult_movement = 5,
     larval_movement = 3,
     density_dependence_form = 3
   )

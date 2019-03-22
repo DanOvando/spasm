@@ -21,7 +21,7 @@ sim_fishery <-
            manager,
            num_patches = 10,
            sim_years = 1,
-           burn_years = 10,
+           burn_years = 25,
            crashed_pop = 1e-3,
            random_mpas = F,
            enviro = NA,
@@ -42,6 +42,10 @@ sim_fishery <-
     e_msy <- NA
 
     max_r_msy <-  NA
+
+    if (sprinkler == FALSE & mpa_habfactor == 1){
+      burn_years <- 1
+    }
 
     if (est_msy == T) {
       e_msy_guess <- fish$m / fleet$q
