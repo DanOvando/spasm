@@ -17,8 +17,8 @@
 #' @return an estimate of costs
 #' @export
 #'
-estimate_costs <-
-  function(max_cr_ratio,
+estimate_costs2 <-
+  function(pars,
            fish,
            fleet,
            b_ref_oa,
@@ -29,9 +29,10 @@ estimate_costs <-
            lags = 0,
            sprinkler = FALSE,
            mpa_habfactor = 1) {
-    fleet$max_cr_ratio <- max_cr_ratio
 
-    # fleet$max_perc_change_f <- p_response
+    fleet$max_cr_ratio <- pars[1]
+
+    fleet$max_perc_change_f <- pars[2]
 
 
     # fleet$p_msy <-
@@ -85,9 +86,11 @@ estimate_costs <-
         mean(.$effort)
       }
 
+    penalty <- sum(sim$effort[sim$year > burn_years] < 1)
+
     # write(final_b / b_msy, "wtf.txt", append = T)
     if (use == "fit") {
-      out <- (log(final_b / b0) - log(b_ref_oa)) ^ 2
+      out <- (log(final_b / b0) - log(b_ref_oa)) ^ 2 + penalty
     } else{
       out <- final_e
     }

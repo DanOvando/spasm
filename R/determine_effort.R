@@ -7,7 +7,7 @@
 #' @param fleet the fleet object
 #' @param fish the fish object
 #' @param y the current year
-#' @param burn_year the last year of the burn period
+#' @param burn_yearss the last year of the burn period
 #' @param pop the population object
 #' @param mpa the mpa object
 #' @param num_patches the number of patches in the system
@@ -20,7 +20,7 @@ determine_effort <-
            fleet,
            fish,
            y,
-           burn_year,
+           burn_yearss,
            pop,
            mpa,
            num_patches,
@@ -43,7 +43,7 @@ determine_effort <-
         fish = fish,
         prior_profits = pop$profits[pop$year == (y - 1)],
         year = y,
-        burn_year = burn_year
+        burn_years = burn_years
       )
 
       new_effort <- effort_for_catch$par
@@ -52,7 +52,7 @@ determine_effort <-
     }
 
     if (fleet$fleet_model == 'supplied-catch') {
-      target_catch <- fleet$catches[y - burn_year]
+      target_catch <- fleet$catches[y - burn_years]
 
       effort_for_catch <- nlminb(
         1,
@@ -68,7 +68,7 @@ determine_effort <-
         fish = fish,
         prior_profits = pop$profits[pop$year == (y - 1)],
         year = y,
-        burn_year = burn_year
+        burn_years = burn_years
       )
       new_effort <- effort_for_catch$par
 
@@ -76,20 +76,24 @@ determine_effort <-
 
 
     if (fleet$fleet_model == 'open-access') {
-
       profits <- pop %>%
         filter(year >= (y - (1 + profit_lags)), year < y) %>%
         group_by(year) %>%
         summarise(profits = sum(profits),
-                  effort = sum(effort)) %>%
+                  effort = sum(effort[age == 0])) %>%
         mutate(ppue = profits / (effort + 1e-6))
 
+      # new_effort <-
+      #   pmin(
+      #     last_effort * (1 + fleet$max_perc_change_f),
+      #     last_effort + (fleet$theta * weighted.mean(profits$ppue, profits$year)) * exp(effort_devs[y + 1])
+      #   )
       new_effort <-
-        last_effort + (fleet$theta * weighted.mean(profits$ppue, profits$year)) * exp(effort_devs[y + 1])
+          last_effort + (fleet$theta * weighted.mean(profits$ppue, profits$year)) * exp(effort_devs[y + 1])
+
 
 
       if (new_effort <= 1e-3) {
-
         new_effort = 1e-3 / (2 - new_effort / 1e-3)
 
       }
@@ -101,11 +105,10 @@ determine_effort <-
 
     }
 
-    if (fleet$fleet_model != 'open-access'){
-    new_effort <- new_effort * exp(effort_devs[y + 1])
+    if (fleet$fleet_model != 'open-access') {
+      new_effort <- new_effort * exp(effort_devs[y + 1])
     }
-    if (fleet$fleet_model == "random_walk"){
-
+    if (fleet$fleet_model == "random_walk") {
       new_effort <- last_effort * exp(effort_devs[y + 1])
 
     }

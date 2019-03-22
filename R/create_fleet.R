@@ -24,6 +24,12 @@
 #' @param q_ac
 #' @param cost_cv
 #' @param cost_ac
+#' @param max_perc_change_f
+#' @param max_cr_ratio
+#' @param q_slope
+#' @param oa_ratio
+#' @param mey_buffer
+#' @param effort_ac
 #'
 #' @return a fleet object
 #' @export
@@ -37,8 +43,9 @@ create_fleet <- function(eq_f = NA,
                          cost = .1,
                          beta = 1.3,
                          theta = 1e-1,
-                         max_perc_change_f = 0.2,
-                         max_cp_ratio = 0.75,
+                         max_perc_change_f = 20,
+                         max_cr_ratio = 0.75,
+                         b_ref_oa = 0.25,
                          q = 1e-3,
                          q_cv = 0,
                          q_ac = 0,
@@ -55,8 +62,6 @@ create_fleet <- function(eq_f = NA,
                          catches = NA,
                          sigma_effort = 0,
                          profit_lags = 4,
-                         theta_tuner = 0.25,
-                         oa_ratio = 0.25,
                          mey_buffer = 2,
                          effort_ac = 0) {
 

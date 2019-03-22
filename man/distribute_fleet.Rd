@@ -4,7 +4,7 @@
 \alias{distribute_fleet}
 \title{\code{distribute_fleet} moves the fishing fleet around}
 \usage{
-distribute_fleet(pop, effort, prior_profits, year, burn_year, fleet,
+distribute_fleet(pop, effort, prior_profits, year, burn_years, fleet,
   num_patches, mpa)
 }
 \arguments{
