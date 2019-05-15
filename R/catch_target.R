@@ -30,7 +30,7 @@ catch_target <- function(total_effort,
     mpa = mpa,
     prior_profits = prior_profits,
     year = year,
-    burn_year = burn_year
+    burn_years = burn_years
   )
 
   fs <- efforts * fleet$q

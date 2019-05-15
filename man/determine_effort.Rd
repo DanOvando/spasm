@@ -4,7 +4,7 @@
 \alias{determine_effort}
 \title{determine_effort}
 \usage{
-determine_effort(last_effort, fleet, fish, y, burn_yearss, pop, mpa,
+determine_effort(last_effort, fleet, fish, y, burn_years, pop, mpa,
   num_patches, effort_devs, profit_lags = 4, previous_max = NA)
 }
 \arguments{
@@ -16,7 +16,7 @@ determine_effort(last_effort, fleet, fish, y, burn_yearss, pop, mpa,
 
 \item{y}{the current year}
 
-\item{burn_yearss}{the last year of the burn period}
+\item{burn_years}{the last year of the burn period}
 
 \item{pop}{the population object}
 

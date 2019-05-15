@@ -227,7 +227,7 @@ complex_fleet <- spasm::sim_fishery(
   tune_costs = TRUE
 )
 
-plot_spasm(complex_fleet)
+plot_spasm(complex_fleet, type = "patch")
 ```
 
 

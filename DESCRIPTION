@@ -1,7 +1,7 @@
 Package: spasm
 Title: SPatial Age Structured Model (SPASM)
 Version: 0.0.0.9000
-Authors@R: person("Ovando", "Dan", email = "dovando@bren.ucsb.edu", role = c("aut", "cre"))
+Authors@R: person("Ovando", "Dan", email = "danovan@uw.edu", role = c("aut", "cre"))
 Description: A spatially explicite age structured bio-economic model primarily designed around messing with MPAs
 Depends: R (>= 3.3.2)
 License: MIT

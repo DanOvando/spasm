@@ -6,7 +6,7 @@
 model forward with fleets etc.}
 \usage{
 sim_fishery(fish, fleet, manager, num_patches = 10, sim_years = 1,
-  burn_years = 10, crashed_pop = 0.001, random_mpas = F,
+  burn_years = 25, crashed_pop = 0.001, random_mpas = F,
   enviro = NA, enviro_strength = 1, rec_driver = "stochastic",
   est_msy = F, time_step, max_window = 10, min_size = 1,
   mpa_habfactor = 1, sprinkler = FALSE, keep_burn = FALSE,

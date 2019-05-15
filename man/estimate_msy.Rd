@@ -4,7 +4,7 @@
 \alias{estimate_msy}
 \title{Title}
 \usage{
-estimate_msy(effort, fish, fleet, sim_years = 25, burn_year = 25,
+estimate_msy(effort, fish, fleet, sim_years = 25, burn_years = 25,
   mpa_size = 0, mpa_year = 100, num_patches = 1, use = "fit",
   seed = 42)
 }

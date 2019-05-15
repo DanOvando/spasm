@@ -2,17 +2,19 @@
 % Please edit documentation in R/mpa_counterfactual.R
 \name{mpa_counterfactual}
 \alias{mpa_counterfactual}
-\title{\code{mpa_counterfactual} compares a fishery with and without an MPA}
+\title{run mpa experiment}
 \usage{
 mpa_counterfactual(fish, fleet, year_mpa, mpa_size, sim_years, num_patches,
-  burn_years)
+  burn_years, sprinkler = FALSE, mpa_habfactor = 1, enviro = NA,
+  enviro_strength = NA, rec_driver = "stochastic",
+  random_mpas = FALSE, min_size = 1, simseed = 42)
 }
 \arguments{
-\item{burn_years}{}
+\item{min_size}{}
 }
 \value{
-an object comparing runs
+a list with two experiments, with and without MPAs
 }
 \description{
-\code{mpa_counterfactual} compares a fishery with and without an MPA
+run mpa experiment
 }

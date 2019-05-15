@@ -43,6 +43,8 @@ sim_fishery <-
 
     max_r_msy <-  NA
 
+    b0 <- NA
+
     if (sprinkler == FALSE & mpa_habfactor == 1){
       burn_years <- 1
     }
