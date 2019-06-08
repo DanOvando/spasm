@@ -268,9 +268,29 @@ sim_fishery <-
         (1:num_patches)[0:prop_mpas] #weird zero is in case prop_mpas is zero
     }
 
+    if (!all(is.na(manager$mpa_locations))){
+
+      if (prop_mpas > 0){
+        warning("overwriting MPA size with specific MPA locations")
+      }
+
+      mpa_locations <- manager$mpa_locations
+
+      if (max(mpa_locations) > num_patches){
+        stop("invalid MPA location supplied, make sure MPAs fit inside number of patches")
+      }
+    }
+
+
     habitat <- rep(1, num_patches)
 
     habitat[mpa_locations]  <- mpa_habfactor
+
+    if (prop_mpas == 0){ # in case you want to simulate MPA habitat but without the MPAs
+
+      mpa_locations <- (1:num_patches)[0:prop_mpas] #weird zero is in case prop_mpas is zero
+
+    }
 
     n0_at_age <-
       (fish$r0 / num_patches) * exp(-fish$m * seq(fish$min_age, fish$max_age, fish$time_step))

@@ -63,14 +63,15 @@ fleet <- create_fleet(
   max_cr_ratio = 0.9,
   max_perc_change_f = 0.5,
   effort_allocation = 'simple',
-  mpa_reaction = "stay"
+  mpa_reaction = "leave"
 )
 
 
 simple <- spasm::sim_fishery(
   fish = fish,
   fleet = fleet,
-  manager = create_manager(mpa_size = 0.2, year_mpa = 25),
+  manager = create_manager(mpa_size = 0.2, year_mpa = 25,
+                           mpa_locations = 23),
   num_patches = 100,
   sim_years = 50,
   burn_years = 1,
@@ -82,6 +83,11 @@ simple <- spasm::sim_fishery(
   sprinkler = FALSE,
   keep_burn = FALSE
 )
+
+simple %>% 
+  filter(year == max(year),
+         mpa == TRUE) %>% 
+  group_by(patch) 
 
 plot_spasm(simple, type = "totals", font_size = 12)
 
