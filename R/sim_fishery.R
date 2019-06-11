@@ -515,7 +515,7 @@ sim_fishery <-
           browser()
         }
       } else {
-        adult_density_modifier <- 1
+        adult_density_modifier <- 0
       }
 
       if (num_patches > 1) {
@@ -525,7 +525,8 @@ sim_fishery <-
             pop %>% filter(year == y, age > fish$min_age),
             fish = fish,
             num_patches = num_patches,
-            move_matrix = (adult_move_matrix * adult_density_modifier) / rowSums(adult_move_matrix * adult_density_modifier)
+            move_matrix = (adult_move_matrix * adult_density_modifier) / rowSums(((adult_move_matrix) * (adult_density_modifier)))
+            # move_matrix = exp(log(adult_move_matrix) + log(adult_density_modifier)) / rowSums(exp(log(adult_move_matrix) + log(adult_density_modifier)))
           )
       }
 
