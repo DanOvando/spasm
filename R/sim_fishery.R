@@ -515,7 +515,7 @@ sim_fishery <-
           browser()
         }
       } else {
-        adult_density_modifier <- 0
+        adult_density_modifier <- 1
       }
 
       if (num_patches > 1) {

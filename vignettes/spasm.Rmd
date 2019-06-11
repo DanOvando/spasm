@@ -115,7 +115,7 @@ fish <-
     steepness = 0.9,
     r0 = 4290000,
     rec_ac = 0,
-    density_movement_modifier = .5,
+    density_movement_modifier = 0,
     adult_movement = 4,
     larval_movement = 30,
     density_dependence_form = 3
