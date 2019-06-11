@@ -23,6 +23,8 @@ a pop object with population and catch trajectories
 model forward with fleets etc.
 }
 \examples{
+\dontrun{
 sim_fishery(fish = fish, fleet = fleet,...)
+}
 
 }

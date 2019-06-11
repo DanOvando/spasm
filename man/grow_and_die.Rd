@@ -16,5 +16,7 @@ numbers and catch at age for all ages above recruits
 \code{grow_and_die} runs growth mortality and fishing
 }
 \examples{
+\dontrun{
 grow_and_die(numbers, fish, fleet)
+}
 }

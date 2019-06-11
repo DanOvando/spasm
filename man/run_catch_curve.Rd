@@ -17,6 +17,3 @@ total mortality estimated by catch curve, z
 \description{
 \code{run_catch_curve} runs a weighted catch curve on spasm data
 }
-\examples{
-run_catch_curve(length_comps, fish)
-}

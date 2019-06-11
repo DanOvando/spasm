@@ -6,7 +6,6 @@
 #' @return total mortality estimated by catch curve, z
 #' @export
 #'
-#' @examples run_catch_curve(length_comps, fish)
 run_catch_curve <- function(length_comps, fish) {
   age_comps <-  length_to_age(
     length_samples = length_comps,

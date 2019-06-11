@@ -7,7 +7,10 @@
 #' @return a redistributed vector of effort in space
 #' @export
 #'
-#' @examples distribute_fleet(pop, effort, fleet)
+#' @examples
+#' \dontrun{
+#'   distribute_fleet(pop, effort, fleet)
+#'   }
 distribute_fleet <-
   function(pop,
            effort,

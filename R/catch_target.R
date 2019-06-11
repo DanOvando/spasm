@@ -38,8 +38,8 @@ catch_target <- function(total_effort,
   pop$f <- fs
 
   caught <- pop %>%
-    group_by(patch) %>%
-    mutate(biomass_caught = grow_and_die(
+    dplyr::group_by(patch) %>%
+    dplyr::mutate(biomass_caught = grow_and_die(
       numbers = numbers,
       f = f,
       mpa = mpa,
@@ -52,8 +52,8 @@ catch_target <- function(total_effort,
     }
 
   alive <- pop %>%
-    group_by(patch) %>%
-    mutate(survivors = grow_and_die(
+    dplyr::group_by(patch) %>%
+    dplyr::mutate(survivors = grow_and_die(
       numbers = numbers,
       f = f,
       mpa = mpa,

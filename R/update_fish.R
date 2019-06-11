@@ -5,7 +5,10 @@
 #' @return an updated fish list
 #' @export
 #'
-#' @examples update_fish(fish %>% mutate(linf = 222))
+#' @examples
+#' \dontrun{
+#' update_fish(fish %>% mutate(linf = 222))
+#' }
 update_fish <- function(fish){
 
   fish_vars <- formals(create_fish) %>% names() #look up arguments to create fish

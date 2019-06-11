@@ -7,7 +7,6 @@
 #' @return probabilities at each value
 #' @export
 #'
-#' @examples
 logistic_curve <- function(values, fifty, delta) {
 
   prob <- ((1 / (1 + exp(-log(

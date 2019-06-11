@@ -6,7 +6,10 @@
 #' @return an updated fish list
 #' @export
 #'
-#' @examples update_fleet(fleet)
+#' @examples
+#' \dontrun{
+#' update_fleet(fleet)
+#' }
 update_fleet <- function(fleet,fish){
 
   fleet_vars <- formals(create_fleet) %>% names() #look up arguments to create fish

@@ -15,7 +15,10 @@
 #' @return a dataframe of mean trait values
 #' @export
 #'
-#' @examples life_traits <- Get_traits(Genus = "Lutjanus", Species = "campechanus")
+#' @examples
+#' \dontrun{
+#' life_traits <- Get_traits(Genus = "Lutjanus", Species = "campechanus")
+#' }
 Get_traits <- function( Class="predictive", Order="predictive", Family="predictive", Genus="predictive", Species="predictive",verbose = FALSE) {
 
 

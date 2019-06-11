@@ -115,7 +115,7 @@ fish <-
     steepness = 0.9,
     r0 = 4290000,
     rec_ac = 0,
-    density_movement_modifier = 0.1,
+    density_movement_modifier = -.9,
     adult_movement = 10,
     larval_movement = 30,
     density_dependence_form = 3
@@ -142,6 +142,7 @@ fleet <- create_fleet(
 )
 
 
+set.seed(42)
 complex <- spasm::sim_fishery(
   fish = fish,
   fleet = fleet,
@@ -159,6 +160,13 @@ complex <- spasm::sim_fishery(
 )
 
 plot_spasm(complex, type = "patch")
+
+complex %>% 
+  filter(year == max(year)) %>% 
+  group_by(patch) %>% 
+  summarise(biomass = sum(biomass)) %>% 
+  ggplot(aes(patch, biomass)) + 
+  geom_col()
 
 
 ```

@@ -16,5 +16,7 @@ an updated fish list
 update_fish
 }
 \examples{
+\dontrun{
 update_fish(fish \%>\% mutate(linf = 222))
+}
 }

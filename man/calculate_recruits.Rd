@@ -21,5 +21,7 @@ as a function of spawning stock biomass under
 various forms of density dependence
 }
 \examples{
+\dontrun{
 calculate_recruits(pop, fish, num_patches = 10, phase = 'grow')
+}
 }

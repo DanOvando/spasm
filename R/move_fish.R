@@ -5,7 +5,6 @@
 #' @return relocated adult fish
 #' @export
 #'
-#' @examples move_fish(pop)
 move_fish <- function(here_pop, num_patches, fish, move_matrix){
 
   # from Siegal et al. 2003

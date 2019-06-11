@@ -11,7 +11,10 @@
 #' @return recruits of age min_age in each patch
 #' @export
 #'
-#' @examples calculate_recruits(pop, fish, num_patches = 10, phase = 'grow')
+#' @examples
+#' \dontrun{
+#' calculate_recruits(pop, fish, num_patches = 10, phase = 'grow')
+#' }
 
 calculate_recruits <-
   function(pop,
@@ -48,9 +51,9 @@ calculate_recruits <-
       if (fish$density_dependence_form == 1) {
         # Recruitment is independent in each area, but a fraction of the recruits in each area drift to the adjacent areas before settling
         recruits <- pop %>%
-          group_by(patch) %>%
-          summarise(ssb = sum(ssb)) %>%
-          mutate(recruits = (0.8 * r0s * fish$steepness * ssb) / (
+          dplyr::group_by(patch) %>%
+          dplyr::summarise(ssb = sum(ssb)) %>%
+          dplyr::mutate(recruits = (0.8 * r0s * fish$steepness * ssb) / (
             0.2 * ssb0s * (1 - fish$steepness) +
               (fish$steepness - 0.2) * ssb
           )) %>% {
@@ -72,8 +75,8 @@ calculate_recruits <-
         #     .$recruits * prop_patch_habitat
         #   }
         recruits <- pop %>%
-          summarise(ssb = sum(ssb)) %>%
-          mutate(recruits = (0.8 * sum(r0s) * fish$steepness * ssb) / (
+          dplyr::summarise(ssb = sum(ssb)) %>%
+          dplyr::mutate(recruits = (0.8 * sum(r0s) * fish$steepness * ssb) / (
             0.2 * sum(fish$ssb0) * (1 - fish$steepness) +
               (fish$steepness - 0.2) * ssb
           )) %>% {
@@ -104,8 +107,8 @@ calculate_recruits <-
         #larvae are distributed to each area, and then density dependence occurs based on the number of spawners in each area
 
         ssb <- pop %>%
-          group_by(patch) %>%
-          summarise(ssb = sum(ssb))
+          dplyr::group_by(patch) %>%
+          dplyr::summarise(ssb = sum(ssb))
 
         larvae <- crossprod(ssb$ssb, move_matrix)
 

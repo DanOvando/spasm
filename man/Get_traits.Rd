@@ -32,5 +32,7 @@ This function returns the mean un-logged life history traits for the closest mat
 supplied taxonomic information.
 }
 \examples{
+\dontrun{
 life_traits <- Get_traits(Genus = "Lutjanus", Species = "campechanus")
+}
 }

@@ -14,7 +14,6 @@
 #' @return a data frame of error terms
 #' @export
 #'
-#' @examples
 strain_dlas <- function(fish,
                         fleet,
                         linf_error = 1,

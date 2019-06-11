@@ -17,5 +17,7 @@ a redistributed vector of effort in space
 \code{distribute_fleet} moves the fishing fleet around
 }
 \examples{
-distribute_fleet(pop, effort, fleet)
+\dontrun{
+  distribute_fleet(pop, effort, fleet)
+  }
 }

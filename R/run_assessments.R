@@ -8,7 +8,6 @@
 #' @return assessment outputs
 #' @export
 #'
-#' @examples
 run_assessments <- function(fish, fleet, length_comps, true_f){
 
   mean_f <- true_f

@@ -24,5 +24,7 @@ Generates a time series of values with lognormal errors and
 some temporal autocorrelation
 }
 \examples{
+\dontrun{
 generate_timeseries(thing = 2, sigma = .1, ac = 0.5, time = 10)
+}
 }

@@ -9,7 +9,6 @@
 #' @return either ss of length comps or SPR
 #' @export
 #'
-#' @examples
 lbspr_lite <- function(f,
                         fish,
                         fleet,

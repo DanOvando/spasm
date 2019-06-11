@@ -13,7 +13,10 @@
 #' @return a pop object with population and catch trajectories
 #' @export
 #'
-#' @examples sim_fishery(fish = fish, fleet = fleet,...)
+#' @examples
+#' \dontrun{
+#' sim_fishery(fish = fish, fleet = fleet,...)
+#' }
 #'
 sim_fishery <-
   function(fish,
@@ -177,7 +180,7 @@ sim_fishery <-
         patch = 1:num_patches,
         age = seq(fish$min_age, fish$max_age, fish$time_step)
       ) %>%
-      mutate(
+      dplyr::mutate(
         numbers = NA,
         biomass = NA,
         ssb = NA,
@@ -188,7 +191,7 @@ sim_fishery <-
         mpa = F,
         cost = NA
       ) %>%
-      as_data_frame() %>%
+      dplyr::as_data_frame() %>%
       arrange(year, patch, age)
 
 
@@ -241,27 +244,24 @@ sim_fishery <-
     prop_mpas <- round(num_patches * manager$mpa_size)
 
     if (random_mpas == T & prop_mpas > 0) {
-      # mpa_locations <- sample(1:num_patches, prop_mpas)
-
-      # min_size <- 10
 
       ms <- min(prop_mpas, max(1, min_size * num_patches))
 
       cwidth <- num_patches / ms
 
       atemp <- tibble(patch = 1:num_patches) %>%
-        mutate(cluster = cut(patch, cwidth))
-
+        dplyr::mutate(cluster = cut(patch, pmax(2,round(cwidth))))
       btemp <-
         sampling::cluster(atemp,
                           cluster = "cluster",
-                          ceiling(prop_mpas / ms),
+                          pmin(n_distinct(atemp$cluster),ceiling(prop_mpas / ms)),
                           method = "srswor")
 
       ctemp <- sampling::getdata(atemp, btemp) %>%
         sample_n(pmin(prop_mpas, nrow(.)))
 
       mpa_locations <- ctemp$patch
+
 
     } else {
       mpa_locations <-
@@ -367,33 +367,33 @@ sim_fishery <-
     fleet$cost <- cost_guess
 
     price_frame <-
-      data_frame(year = 1:sim_years, price = price_series)
+      dplyr::data_frame(year = 1:sim_years, price = price_series)
 
-    cost_frame <- data_frame(year = 1:sim_years, cost = cost_series)
+    cost_frame <- dplyr::data_frame(year = 1:sim_years, cost = cost_series)
 
     pop <- pop %>%
-      select(-cost) %>%
-      left_join(cost_frame, by = "year") %>%
-      left_join(price_frame, by = "year")
+      dplyr::select(-cost) %>%
+      dplyr::left_join(cost_frame, by = "year") %>%
+      dplyr::left_join(price_frame, by = "year")
 
     pop$numbers[pop$year == 1] <- rep(n0_at_age, num_patches)
 
     if (fleet$cost_function == "distance from port") {
       cost_frame <-
         expand.grid(year = 1:sim_years, patch = 1:num_patches) %>%
-        as_data_frame() %>%
-        left_join(cost_frame, by = "year") %>%
-        mutate(cost = cost * (1 + fleet$cost_slope * (patch - 1)))
+        dplyr::as_data_frame() %>%
+        dplyr::left_join(cost_frame, by = "year") %>%
+        dplyr::mutate(cost = cost * (1 + fleet$cost_slope * (patch - 1)))
 
       pop <- pop %>%
-        select(-cost) %>%
-        left_join(cost_frame, by = c("patch", "year"))
+        dplyr::select(-cost) %>%
+        dplyr::left_join(cost_frame, by = c("patch", "year"))
     }
 
 
     pop <- pop %>%
-      left_join(
-        data_frame(
+      dplyr::left_join(
+        dplyr::data_frame(
           age = seq(fish$min_age, fish$max_age, fish$time_step),
           ssb_at_age = fish$ssb_at_age,
           weight_at_age = fish$weight_at_age
@@ -421,35 +421,35 @@ sim_fishery <-
     adult_move_grid <-
       expand.grid(from = 1:num_patches, to = 1:num_patches) %>%
       as.data.frame() %>%
-      mutate(distance = purrr::map2_dbl(from, to, ~ min(
+      dplyr::mutate(distance = purrr::map2_dbl(from, to, ~ min(
         c(abs(.x - .y),
           .x + num_patches - .y,
           num_patches - .x + .y)
       ))) %>%
-      mutate(movement = ifelse(
+      dplyr::mutate(movement = ifelse(
         is.finite(dnorm(distance, 0, fish$adult_movement)),
         dnorm(distance, 0, fish$adult_movement),
         1
       ))  %>%
       group_by(from) %>%
-      mutate(prob_move = movement / sum(movement))
+      dplyr::mutate(prob_move = movement / sum(movement))
 
     adult_move_matrix <- adult_move_grid %>%
       ungroup() %>%
-      select(from, to, prob_move) %>%
+      dplyr::select(from, to, prob_move) %>%
       spread(to, prob_move) %>%
-      select(-from) %>%
+      dplyr:: select(-from) %>%
       as.matrix()
 
     larval_move_grid <-
       expand.grid(from = 1:num_patches, to = 1:num_patches) %>%
       as.data.frame() %>%
-      mutate(distance = purrr::map2_dbl(from, to, ~ min(
+      dplyr::mutate(distance = purrr::map2_dbl(from, to, ~ min(
         c(abs(.x - .y),
           .x + num_patches - .y,
           num_patches - .x + .y)
       ))) %>%
-      mutate(
+      dplyr::mutate(
         larval_movement = ifelse(
           from %in% mpa_locations &
             sprinkler != FALSE,
@@ -460,17 +460,17 @@ sim_fishery <-
 
 
     larval_move_grid <-  larval_move_grid %>%
-      mutate(movement = ifelse(is.finite(
+      dplyr::mutate(movement = ifelse(is.finite(
         dnorm(distance, 0, fish$larval_movement)
       ), dnorm(distance, 0, larval_movement), 1))  %>%
       group_by(from) %>%
-      mutate(prob_move = movement / sum(movement))
+      dplyr::mutate(prob_move = movement / sum(movement))
 
     larval_move_matrix <- larval_move_grid %>%
       ungroup() %>%
-      select(from, to, prob_move) %>%
+      dplyr::select(from, to, prob_move) %>%
       spread(to, prob_move) %>%
-      select(-from) %>%
+      dplyr::select(-from) %>%
       as.matrix()
 
     # larval_move_grid <-
@@ -636,22 +636,22 @@ sim_fishery <-
 
           fleet$cost <- cost_guess
 
-          cost_frame <- data_frame(year = 1:sim_years, cost = cost_series)
+          cost_frame <- dplyr::data_frame(year = 1:sim_years, cost = cost_series)
 
           pop <- pop %>%
-            select(-cost) %>%
-            left_join(cost_frame, by = "year")
+            dplyr::select(-cost) %>%
+            dplyr::left_join(cost_frame, by = "year")
 
           if (fleet$cost_function == "distance from port") {
             cost_frame <-
               expand.grid(year = 1:sim_years, patch = 1:num_patches) %>%
-              as_data_frame() %>%
-              left_join(cost_frame, by = "year") %>%
-              mutate(cost = cost * (1 + fleet$cost_slope * (patch - 1)))
+              dplyr::as_data_frame() %>%
+              dplyr::left_join(cost_frame, by = "year") %>%
+              dplyr::mutate(cost = cost * (1 + fleet$cost_slope * (patch - 1)))
 
             pop <- pop %>%
-              select(-cost) %>%
-              left_join(cost_frame, by = c("patch", "year"))
+              dplyr::select(-cost) %>%
+              dplyr::left_join(cost_frame, by = c("patch", "year"))
           }
 
         }
@@ -711,7 +711,7 @@ sim_fishery <-
       pop[pop$year == (y + 1), "numbers"] <-
         pop[now_year, ] %>%
         group_by(patch) %>%
-        mutate(numbers = grow_and_die(
+        dplyr::mutate(numbers = grow_and_die(
           numbers = numbers,
           f = f,
           mpa = mpa,
@@ -727,7 +727,7 @@ sim_fishery <-
       pop[now_year, "numbers_caught"] <-
         pop[now_year, ] %>%
         group_by(patch) %>%
-        mutate(
+        dplyr::mutate(
           numbers_caught = grow_and_die(
             numbers = numbers,
             f = f,
@@ -743,8 +743,8 @@ sim_fishery <-
         }
 
       pop <- pop %>%
-        mutate(patch_age_costs = ((cost) * (effort) ^ fleet$beta) / fish$max_age) %>% # divide costs up among each age class
-        mutate(
+        dplyr::mutate(patch_age_costs = ((cost) * (effort) ^ fleet$beta) / fish$max_age) %>% # divide costs up among each age class
+        dplyr::mutate(
           ssb = numbers * ssb_at_age,
           biomass = numbers * weight_at_age,
           biomass_caught = numbers_caught * weight_at_age,
@@ -782,9 +782,9 @@ sim_fishery <-
         effort[y + 1] <- fleet$initial_effort
       }
     }
-    rec_mat <- data_frame(year = 1:sim_years, rec_dev = rec_devs)
+    rec_mat <- dplyr::data_frame(year = 1:sim_years, rec_dev = rec_devs)
 
-    enviro_mat <- data_frame(year = 1:sim_years, enviro = enviro)
+    enviro_mat <- dplyr::data_frame(year = 1:sim_years, enviro = enviro)
 
     og <- burn_years
     if (keep_burn == TRUE) {
@@ -792,10 +792,10 @@ sim_fishery <-
     }
 
     pop <- pop %>%
-      left_join(rec_mat, by = "year") %>%
-      left_join(enviro_mat, by = "year") %>%
-      filter(year > burn_years, year < max(year)) %>%
-      mutate(
+      dplyr::left_join(rec_mat, by = "year") %>%
+      dplyr::left_join(enviro_mat, by = "year") %>%
+      dplyr::filter(year > burn_years, year < max(year)) %>%
+      dplyr:: mutate(
         burn = year <= og,
         eventual_mpa = patch %in% mpa_locations,
         msy = msy,

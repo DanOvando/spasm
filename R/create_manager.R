@@ -5,7 +5,11 @@
 #' @return a manager object
 #' @export
 #'
-#' @examples create_manager(year_mpa = 12)
+#' @examples
+#'
+#' \dontrun{
+#' create_manager(year_mpa = 12)
+#' }
 create_manager <- function(year_mpa = 15,
                            mpa_size = 0.25,
                            mpa_locations = NA){

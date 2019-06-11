@@ -26,5 +26,7 @@ a fleet object
 create_fleet
 }
 \examples{
+\dontrun{
 create_fleet(eq_f = 2,length_50_sel = 25, length_95_sel = 27, fish = bluefish)
+}
 }

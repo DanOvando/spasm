@@ -4,7 +4,7 @@
 \alias{create_manager}
 \title{create manager}
 \usage{
-create_manager(year_mpa = 15, mpa_size = 0.25)
+create_manager(year_mpa = 15, mpa_size = 0.25, mpa_locations = NA)
 }
 \arguments{
 \item{year_mpa}{}
@@ -16,5 +16,8 @@ a manager object
 create manager
 }
 \examples{
+
+\dontrun{
 create_manager(year_mpa = 12)
+}
 }

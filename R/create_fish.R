@@ -40,8 +40,10 @@
 #' @return a fish list object
 #' @export
 #'
-#' @examples white_seabass = create_fish(scientific_name = "Atractoscion nobilis", query_fishlife = T)
-#'
+#' @examples
+#' \dontrun{
+#' white_seabass = create_fish(scientific_name = "Atractoscion nobilis", query_fishlife = T)
+#'}
 create_fish <- function(common_name = 'white seabass',
                         scientific_name = "Atractoscion nobilis",
                         linf = NA,
@@ -93,15 +95,15 @@ create_fish <- function(common_name = 'white seabass',
       set_names(c("genus", "species"))
 
     fish_life <- genus_species %>%
-      mutate(life_traits = pmap(list(Genus = genus, Species = species), safely(Get_traits)))
+      dplyr::mutate(life_traits = pmap(list(Genus = genus, Species = species), safely(Get_traits)))
 
     fish_life <- fish_life %>%
-      mutate(fish_life_worked = map(life_traits, 'error') %>% map_lgl(is.null)) %>%
-      filter(fish_life_worked) %>%
-      mutate(life_traits = map(life_traits, 'result')) %>%
-      unnest() %>%
-      mutate(taxa = glue::glue('{genus} {species}')) %>%
-      set_names(tolower)
+      dplyr::mutate(fish_life_worked = purrr::map(life_traits, 'error') %>% map_lgl(is.null)) %>%
+      dplyr::filter(fish_life_worked) %>%
+      dplyr::mutate(life_traits = purrr::map(life_traits, 'result')) %>%
+      tidyr::unnest() %>%
+      dplyr::mutate(taxa = glue::glue('{genus} {species}')) %>%
+      rlang::set_names(tolower)
 
 
     if (weight_units == "kg"){
@@ -131,7 +133,7 @@ create_fish <- function(common_name = 'white seabass',
     "
 
     weight_fit <-
-      stan(
+      rstan::stan(
         model_code = weight_stan,
         data = list(winf = fish_life$winfinity*2, linf = fish_life$loo),
         verbose = F,
@@ -139,10 +141,10 @@ create_fish <- function(common_name = 'white seabass',
       )
 
     weight_fit <- broom::tidy(weight_fit) %>%
-      select(term, estimate) %>%
-      spread(term, estimate)
+      dplyr::select(term, estimate) %>%
+      tidyr::spread(term, estimate)
     } else{
-      weight_fit <- data_frame(wa = fish_life$winfinity / (fish_life$loo ^ default_wb),
+      weight_fit <- dplyr::data_frame(wa = fish_life$winfinity / (fish_life$loo ^ default_wb),
                                wb = default_wb)
     }
   # process lengths ---------------------------------------------------------
@@ -226,10 +228,10 @@ create_fish <- function(common_name = 'white seabass',
     time_step = time_step,
     linf_buffer = linf_buffer
   ) %>%
-    ungroup() %>%
-    select(age, length_bin, p_bin) %>%
-    spread(length_bin, p_bin) %>%
-    select(-age)
+    dplyr::ungroup() %>%
+    dplyr::select(age, length_bin, p_bin) %>%
+    tidyr::spread(length_bin, p_bin) %>%
+    dplyr::select(-age)
 
   # process maturity
   if ((is.na(age_50_mature) |
@@ -258,7 +260,7 @@ create_fish <- function(common_name = 'white seabass',
 
     p_mat_at_age <- (as.matrix(length_at_age_key) %*% mat_at_bin)
 
-    mat_at_age <- data_frame(age = seq(min_age,max_age, by = time_step),mean_mat_at_age = p_mat_at_age)
+    mat_at_age <- dplyr::data_frame(age = seq(min_age,max_age, by = time_step),mean_mat_at_age = p_mat_at_age)
 
     age_mature <- mat_at_age$age[mat_at_age$mean_mat_at_age >= 0.5][1]
 

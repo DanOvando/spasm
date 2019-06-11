@@ -7,7 +7,6 @@
 #' @return an aproximate spr
 #' @export
 #'
-#' @examples
 approx_spr <- function(fish, fleet,f) {
 
 

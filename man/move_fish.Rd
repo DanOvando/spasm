@@ -15,6 +15,3 @@ relocated adult fish
 \description{
 \code{move_fish} moves fish via a movement function
 }
-\examples{
-move_fish(pop)
-}

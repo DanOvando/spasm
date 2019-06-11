@@ -10,7 +10,10 @@
 #' @return numbers and catch at age for all ages above recruits
 #' @export
 #'
-#' @examples grow_and_die(numbers, fish, fleet)
+#' @examples
+#' \dontrun{
+#' grow_and_die(numbers, fish, fleet)
+#' }
 grow_and_die <- function(numbers, f, mpa, fish, fleet,y) {
   survivors <- vector(mode = 'numeric', length = length(numbers))
 

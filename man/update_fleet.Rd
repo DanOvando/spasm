@@ -16,5 +16,7 @@ an updated fish list
 update_fleet
 }
 \examples{
+\dontrun{
 update_fleet(fleet)
+}
 }

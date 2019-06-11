@@ -13,7 +13,6 @@
 #' @return ss for depletion
 #' @export
 #'
-#' @examples
 tune_for_depletion <- function(control_variable,
                                target_depletion,
                                fish,

@@ -28,6 +28,7 @@ a fish list object
 creates a fish list object with all the life history goodies
 }
 \examples{
+\dontrun{
 white_seabass = create_fish(scientific_name = "Atractoscion nobilis", query_fishlife = T)
-
+}
 }
