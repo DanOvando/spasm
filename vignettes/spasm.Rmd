@@ -164,8 +164,9 @@ plot_spasm(complex, type = "patch")
 complex %>% 
   filter(year == max(year)) %>% 
   group_by(patch) %>% 
-  summarise(biomass = sum(biomass)) %>% 
-  ggplot(aes(patch, biomass)) + 
+  summarise(biomass = sum(biomass),
+            mpa = unique(mpa)) %>% 
+  ggplot(aes(patch, biomass, fill = mpa)) + 
   geom_col()
 
 
@@ -196,7 +197,7 @@ fish <-
     steepness = 0.9,
     r0 = 1000,
     rec_ac = 0,
-    density_movement_modifier = 0,
+    density_movement_modifier = 0.25,
     adult_movement = 3,
     larval_movement = 3,
     density_dependence_form = 3

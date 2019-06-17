@@ -15,7 +15,7 @@ create_fish(common_name = "white seabass",
   larval_movement = 2, query_fishlife = T, price = 1, price_cv = 0,
   price_ac = 0, price_slope = 0, sigma_r = 0, rec_ac = 0,
   cores = 4, mat_mode = "age", default_wb = 2.8,
-  tune_weight = FALSE, density_movement_modifier = 0,
+  tune_weight = FALSE, density_movement_modifier = 1,
   linf_buffer = 1.2)
 }
 \arguments{
