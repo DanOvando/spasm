@@ -19,8 +19,8 @@ fish <-
     steepness = 0.9,
     r0 = 100,
     rec_ac = 0,
-    density_movement_modifier = 0,
-    adult_movement = 3,
+    density_movement_modifier = 0.1,
+    adult_movement = 20,
     larval_movement = 3,
     density_dependence_form = 3
   )
@@ -55,7 +55,7 @@ a <- Sys.time()
 sim_noad <- spasm::sim_fishery(
   fish = fish,
   fleet = fleet,
-  manager = create_manager(mpa_size = 0, year_mpa = 30),
+  manager = create_manager(mpa_size = 0.5, year_mpa = 5),
   num_patches = 50,
   sim_years = 50,
   burn_years = 1,

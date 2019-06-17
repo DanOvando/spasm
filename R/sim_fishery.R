@@ -502,20 +502,63 @@ sim_fishery <-
 
       now_year <- pop$year == y
 
-      if (fish$density_movement_modifier > 0) {
-        adult_density_modifier <-
-          calc_density_gradient(
-            pop,
-            y,
-            num_patches = num_patches,
-            density_modifier = fish$density_movement_modifier
-          )
+      if (fish$density_movement_modifier < 1 & y > burn_years) {
 
-        if (any(adult_density_modifier < 0)) {
-          browser()
-        }
-      } else {
-        adult_density_modifier <- 1
+        slope <- fish$adult_movement - (fish$adult_movement * fish$density_movement_modifier)
+
+        # depletion = seq(0,2, by = 0.1)
+        #
+        # pmin(fish$adult_movement, slope * depletion + (fish$adult_movement * fish$density_movement_modifier)) %>%
+        #   plot()
+
+        how_crowded <- pop %>%
+          filter(now_year) %>%
+          group_by(patch) %>%
+          summarise(ssb = sum(ssb)) %>%
+          arrange(patch) %>%
+          mutate(depletion = ssb / fish$ssb0) %>%
+          mutate(move_rate = pmin(
+            fish$adult_movement,
+            slope * depletion + (fish$adult_movement * fish$density_movement_modifier)
+          )) %>%
+          select(patch, move_rate)
+
+        adult_move_grid <-
+          expand.grid(from = 1:num_patches, to = 1:num_patches) %>%
+          as.data.frame() %>%
+          left_join(how_crowded, by = c("from" = "patch")) %>%
+          dplyr::mutate(distance = purrr::map2_dbl(from, to, ~ min(
+            c(abs(.x - .y),
+              .x + num_patches - .y,
+              num_patches - .x + .y)
+          ))) %>%
+          dplyr::mutate(movement = ifelse(
+            is.finite(dnorm(distance, 0, move_rate)),
+            dnorm(distance, 0, move_rate),
+            1
+          ))  %>%
+          group_by(from) %>%
+          dplyr::mutate(prob_move = movement / sum(movement))
+
+
+  adult_move_matrix <- adult_move_grid %>%
+          ungroup() %>%
+          dplyr::select(from, to, prob_move) %>%
+          spread(to, prob_move) %>%
+          dplyr:: select(-from) %>%
+          as.matrix()
+
+        # adult_density_modifier <-
+        #   calc_density_gradient(
+        #     pop,
+        #     y,
+        #     num_patches = num_patches,
+        #     density_modifier = fish$density_movement_modifier
+        #   )
+        #
+        # if (any(adult_density_modifier < 0)) {
+        #   browser()
+        # }
       }
 
       if (num_patches > 1) {
@@ -525,7 +568,8 @@ sim_fishery <-
             pop %>% filter(year == y, age > fish$min_age),
             fish = fish,
             num_patches = num_patches,
-            move_matrix = (adult_move_matrix * adult_density_modifier) / rowSums(((adult_move_matrix) * (adult_density_modifier)))
+            move_matrix = adult_move_matrix
+            # move_matrix = (adult_move_matrix * adult_density_modifier) / rowSums(((adult_move_matrix) * (adult_density_modifier)))
             # move_matrix = exp(log(adult_move_matrix) + log(adult_density_modifier)) / rowSums(exp(log(adult_move_matrix) + log(adult_density_modifier)))
           )
       }

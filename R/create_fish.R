@@ -81,7 +81,7 @@ create_fish <- function(common_name = 'white seabass',
                         mat_mode = "age",
                         default_wb = 2.8,
                         tune_weight = FALSE,
-                        density_movement_modifier = 0,
+                        density_movement_modifier = 1,
                         linf_buffer = 1.2) {
 
 
