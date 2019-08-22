@@ -15,7 +15,7 @@ Imports:
     Rcpp,
     RcppEigen,
     rstan,
-    FishLife,
+    FishLife (>= 1.0.2),
     broom,
     dplyr,
     gganimate,
@@ -33,3 +33,5 @@ Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr
 LinkingTo: Rcpp
+Remotes:  
+    james-thorson/FishLife

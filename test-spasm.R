@@ -56,7 +56,7 @@ sim_noad <- spasm::sim_fishery(
   fish = fish,
   fleet = fleet,
   manager = create_manager(mpa_size = 0.5, year_mpa = 5),
-  num_patches = 50,
+  num_patches = 100,
   sim_years = 50,
   burn_years = 1,
   time_step = fish$time_step,

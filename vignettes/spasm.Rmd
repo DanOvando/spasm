@@ -40,9 +40,10 @@ fish <-
     steepness = 0.9,
     r0 = 4290000,
     rec_ac = 0,
-    adult_movement = 0,
-    larval_movement = 0,
-    density_dependence_form = 1
+    adult_movement = 20,
+    larval_movement = 10,
+    density_dependence_form = 1,
+    density_movement_modifier =  0.2
   )
 
 
@@ -54,6 +55,7 @@ fleet <- create_fleet(
   q_cv = 0,
   q_ac = .7,
   q_slope = 0,
+  eq_f = .1,
   fleet_model = "constant-effort",
   sigma_effort = 0,
   length_50_sel = 0.1 * fish$linf,
@@ -70,8 +72,7 @@ fleet <- create_fleet(
 simple <- spasm::sim_fishery(
   fish = fish,
   fleet = fleet,
-  manager = create_manager(mpa_size = 0.2, year_mpa = 25,
-                           mpa_locations = 23),
+  manager = create_manager(mpa_size = 0.2, year_mpa = 25),
   num_patches = 100,
   sim_years = 50,
   burn_years = 1,
@@ -80,7 +81,7 @@ simple <- spasm::sim_fishery(
   random_mpas = FALSE,
   min_size = 0.05,
   mpa_habfactor = 1,
-  sprinkler = FALSE,
+  sprinkler = TRUE,
   keep_burn = FALSE
 )
 
@@ -89,7 +90,7 @@ simple %>%
          mpa == TRUE) %>% 
   group_by(patch) 
 
-plot_spasm(simple, type = "totals", font_size = 12)
+plot_spasm(simple, type = "patch", font_size = 12)
 
 ```
 
