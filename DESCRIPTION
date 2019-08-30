@@ -20,7 +20,7 @@ Imports:
     dplyr,
     gganimate,
     glue,
-    purrr,
+    purrr (>= 0.3),
     rlang,
     sampling,
     scales,
@@ -33,5 +33,5 @@ Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr
 LinkingTo: Rcpp
-Remotes:  
+Remotes: 
     james-thorson/FishLife
