@@ -24,7 +24,7 @@ Get_traits <- function( Class="predictive", Order="predictive", Family="predicti
 
   closest_match <- FishLife::Search_species(Class = Class, Order = Order, Family = Family, Genus = Genus, Species = Species)
 
-  trait_table <- as.data.frame(t(FishLife::database$ParHat$beta_gj[closest_match$GroupNum[[1]],]))
+  trait_table <- as.data.frame(t(FishLife::FishBase_and_RAM$ParHat$beta_gj[closest_match$GroupNum[[1]],]))
 
   trait_table[colnames(trait_table) != 'Temperature'] <-
     exp(trait_table[colnames(trait_table) != 'Temperature'])

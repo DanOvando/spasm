@@ -598,15 +598,6 @@ sim_fishery <-
             tune_costs == TRUE) {
           #located here to allow for b0
 
-          # huh <- map_dbl(seq(0.01,0.9, by = 0.1), estimate_costs, fish = fish,
-          #                fleet = fleet,
-          #                b_ref_oa = fleet$b_ref_oa,
-          #                lags = 10,
-          #                num_patches = num_patches,
-          #                sim_years = sim_years,
-          #                burn_years = burn_years
-          # )
-
           tuned_cr_ratio <-
             nlminb(
               c(0.3),
@@ -742,7 +733,6 @@ sim_fishery <-
           num_patches = num_patches,
           mpa = mpa
         )
-
       if (fleet$tech_rate > 0 & y > burn_years) {
         q[y] <-
           q[y - 1] + pmax(0,
@@ -795,7 +785,6 @@ sim_fishery <-
           biomass_caught = numbers_caught * weight_at_age,
           profits = biomass_caught * price - patch_age_costs
         )
-
       # spawn ----
 
       # if (is.na(spawning_season) | ((((year) - floor(year))/spawning_season) == 1))

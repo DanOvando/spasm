@@ -101,7 +101,7 @@ create_fish <- function(common_name = 'white seabass',
       dplyr::mutate(fish_life_worked = purrr::map(life_traits, 'error') %>% map_lgl(is.null)) %>%
       dplyr::filter(fish_life_worked) %>%
       dplyr::mutate(life_traits = purrr::map(life_traits, 'result')) %>%
-      tidyr::unnest() %>%
+      tidyr::unnest(cols = life_traits) %>%
       dplyr::mutate(taxa = glue::glue('{genus} {species}')) %>%
       rlang::set_names(tolower)
 
@@ -168,7 +168,6 @@ create_fish <- function(common_name = 'white seabass',
     }
 
     if (is.na(max_age)){
-
       max_age <- ceiling(fish_life$tmax)
 
     }

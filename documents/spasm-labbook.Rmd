@@ -1805,7 +1805,7 @@ fleet <- create_fleet(
   initial_effort = 1000,
   profit_lags =  1,
   beta = 1,
-  max_cr_ratio = 0.8,
+  max_cr_ratio = 0.1,
   max_perc_change_f = 2,
   effort_allocation = 'profit-gravity',
   b_ref_oa = .9
@@ -1863,9 +1863,9 @@ fish <-
     time_step = 1,
     sigma_r = 0,
     price = 10,
-    price_cv = 0,
-    price_ac = 0,
-    price_slope = 0,
+    price_cv = 0.25,
+    price_ac = 0.1,
+    price_slope = .5,
     steepness = 0.9,
     r0 = 100,
     rec_ac = 0,
@@ -1882,19 +1882,20 @@ fleet <- create_fleet(
   fish = fish,
   cost_cv =  0,
   cost_ac = 0,
-  cost_slope = 0,
+  cost_slope = 2,
   q_cv = 0,
-  q_ac = .7,
+  q_ac = .025,
   q_slope = 0,
+  cost = NA,
   fleet_model = "open-access",
   target_catch = 200,
   sigma_effort = 0,
   length_50_sel = 0.2 * fish$length_50_mature,
-  initial_effort = 1000,
+  initial_effort = 1,
   profit_lags =  1,
   beta = 1,
   max_cr_ratio = 0.8,
-  max_perc_change_f = 2,
+  max_perc_change_f = 200,
   effort_allocation = 'simple',
   b_ref_oa = pmax(.05,(2 - f_v_m) / 2)
 )
@@ -1911,11 +1912,11 @@ fleet <- create_fleet(
 
 
 a <- Sys.time()
-sim_noad <- spasm::sim_fishery(
+sim_noad <- sim_fishery(
   fish = fish,
   fleet = fleet,
   manager = create_manager(mpa_size = 0.4, year_mpa = 30),
-  num_patches = 50,
+  num_patches = 25,
   sim_years = 50,
   burn_years = 50,
   time_step = fish$time_step,
@@ -1923,12 +1924,12 @@ sim_noad <- spasm::sim_fishery(
   random_mpas = TRUE,
   min_size = 0.05,
   mpa_habfactor = 4,
-  sprinkler = TRUE,
+  sprinkler = FALSE,
   keep_burn = FALSE,
-  tune_costs = TRUE
+  tune_costs = FALSE
 )
 Sys.time() - a
-plot_spasm(sim_noad)
+plot_spasm(sim_noad, type = "totals")
 ```
 
 

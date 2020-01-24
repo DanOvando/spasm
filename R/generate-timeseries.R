@@ -21,7 +21,7 @@ generate_timeseries <- function(thing, cv, ac, time, percent_slope = 0,min_thing
 
   sigma <- sqrt(log(cv^2 + 1))
 
-  if (length(thing) == 1 & sigma > 0){
+  if (length(thing) == 1 & (sigma > 0 | percent_slope > 0)){
 
     thing_devs <-
       rnorm(
