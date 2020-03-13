@@ -42,6 +42,7 @@ determine_effort <-
         use = 'opt',
         fish = fish,
         prior_profits = pop$profits[pop$year == (y - 1)],
+        prior_effort = pop$effort[pop$year == (y - 1)],
         year = y,
         burn_years = burn_years
       )
@@ -67,6 +68,7 @@ determine_effort <-
         use = 'opt',
         fish = fish,
         prior_profits = pop$profits[pop$year == (y - 1)],
+        prior_effort = pop$effort[pop$year == (y - 1)],
         year = y,
         burn_years = burn_years
       )

@@ -19,6 +19,7 @@ catch_target <- function(total_effort,
                          use = 'opt',
                          fish,
                          prior_profits,
+                         prior_effort,
                          year,
                          burn_years) {
 
@@ -29,6 +30,7 @@ catch_target <- function(total_effort,
     num_patches = num_patches,
     mpa = mpa,
     prior_profits = prior_profits,
+    prior_effort = prior_effort,
     year = year,
     burn_years = burn_years
   )
