@@ -89,18 +89,28 @@ create_fish <- function(common_name = 'white seabass',
   # check fishbase -------------
   if (is.na(scientific_name) == F & query_fishlife == T) {
 
+    sq <- purrr::safely(quietly(Get_traits))
+
 
     genus_species <- stringr::str_split(scientific_name, " ", simplify = T) %>%
       as.data.frame() %>%
       set_names(c("genus", "species"))
 
     fish_life <- genus_species %>%
-      dplyr::mutate(life_traits = pmap(list(Genus = genus, Species = species), safely(Get_traits)))
+      dplyr::mutate(life_traits = pmap(
+        list(Genus = genus, Species = species),
+          sq
+      ))
+
+
+      if (!is.null(fish_life$life_traits[[1]]$error)){
+        stop("No match in FishLife: check spelling or supply your own life history values")
+      }
 
     fish_life <- fish_life %>%
       dplyr::mutate(fish_life_worked = purrr::map(life_traits, 'error') %>% map_lgl(is.null)) %>%
       dplyr::filter(fish_life_worked) %>%
-      dplyr::mutate(life_traits = purrr::map(life_traits, 'result')) %>%
+      dplyr::mutate(life_traits = purrr::map(life_traits, c('result',"result"))) %>%
       tidyr::unnest(cols = life_traits) %>%
       dplyr::mutate(taxa = glue::glue('{genus} {species}')) %>%
       rlang::set_names(tolower)

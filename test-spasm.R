@@ -36,7 +36,7 @@ fleet <- create_fleet(
   q_cv = 0,
   q_ac = .7,
   q_slope = 0,
-  fleet_model = "open-access",
+  fleet_model = "constant-effort",
   target_catch = 200,
   sigma_effort = 0,
   length_50_sel = 0.1 * fish$linf,
@@ -224,7 +224,6 @@ sim_ad <- spasm::sim_fishery(
   time_step = fish$time_step,
   est_msy = F,
   tune_costs = F,
-  b_v_bmsy_oa = 0.75,
   random_mpas = F
 )
 

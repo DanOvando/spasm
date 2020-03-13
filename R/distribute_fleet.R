@@ -15,6 +15,7 @@ distribute_fleet <-
   function(pop,
            effort,
            prior_profits,
+           prior_effort,
            year,
            burn_years,
            fleet,
@@ -42,6 +43,7 @@ distribute_fleet <-
     }
 
     if (fleet$effort_allocation == 'profit-gravity') {
+
       if (all(is.na(prior_profits[pop$mpa == F])) |
           year <= burn_years | all(prior_profits[pop$mpa == F] == 0))
       {
@@ -61,12 +63,15 @@ distribute_fleet <-
                 profits_by_patch <-  pop %>%
                   select(patch,mpa) %>%
                   bind_cols(prior_profits = prior_profits) %>%
+                  bind_cols(prior_effort = prior_effort) %>%
                   mutate(prior_profits = prior_profits - (min(prior_profits) - 1e-3)) %>%
-                  group_by(patch) %>%
                   filter(mpa == F) %>%
-                  summarise(profits = sum(prior_profits))
+                  group_by(patch) %>%
+                  summarise(profits = sum(prior_profits),
+                            effort = mean(effort)) %>%
+                  mutate(ppue = profits / effort)
 
-                effort_by_patch <- effort * (profits_by_patch$profits / sum(profits_by_patch$profits)) %>%
+                effort_by_patch <- effort * (profits_by_patch$ppue / sum(profits_by_patch$ppue)) %>%
                   rep(each = length(unique(pop$age)))
 
                 pop$effort[pop$mpa == F] <-  effort_by_patch

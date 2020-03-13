@@ -726,6 +726,7 @@ sim_fishery <-
         distribute_fleet(
           pop = pop %>% filter(year == y),
           prior_profits = pop$profits[pop$year == (y - 1)],
+          prior_effort = pop$effort[pop$year == (y - 1)],
           year = y,
           burn_years = burn_years,
           effort = effort[y],
