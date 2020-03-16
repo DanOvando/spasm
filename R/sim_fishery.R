@@ -592,7 +592,18 @@ sim_fishery <-
       }
       # Adjust fleet
       if (y > (burn_years)) {
-        b0 <- sum(pop$biomass[pop$year == burn_years])
+
+        # b0 <- sum(pop$biomass[pop$year == burn_years])
+
+          # average b0 in case population has recruitment variability
+        b0 <- pop %>%
+          filter(year %in% seq(burn_years - 10, burn_years, 1)) %>%
+          group_by(year) %>%
+          summarise(b = sum(biomass)) %>%
+          ungroup() %>%
+          summarise(b0 = mean(b))
+
+        b0 <- b0$b0
 
         if (fleet$fleet_model == "open-access" &
             tune_costs == TRUE) {

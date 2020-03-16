@@ -40,7 +40,7 @@ fleet <- create_fleet(
   target_catch = 200,
   sigma_effort = 0,
   length_50_sel = 0.1 * fish$linf,
-  initial_effort = 1000,
+  initial_effort = 10000,
   profit_lags =  1,
   beta = 1,
   max_cr_ratio = 0.8,
