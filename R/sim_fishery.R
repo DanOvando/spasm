@@ -181,15 +181,15 @@ sim_fishery <-
         age = seq(fish$min_age, fish$max_age, fish$time_step)
       ) %>%
       dplyr::mutate(
-        numbers = NA,
-        biomass = NA,
-        ssb = NA,
-        numbers_caught = NA,
-        profits = NA,
+        numbers = 0,
+        biomass = 0,
+        ssb = 0,
+        numbers_caught = 0,
+        profits = 0,
         effort = 0,
         f = 0,
         mpa = F,
-        cost = NA
+        cost = 0
       ) %>%
       dplyr::as_data_frame() %>%
       arrange(year, patch, age)
@@ -770,7 +770,6 @@ sim_fishery <-
         {
           .$numbers
         }
-
       pop[now_year, "numbers_caught"] <-
         pop[now_year, ] %>%
         group_by(patch) %>%

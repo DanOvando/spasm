@@ -27,20 +27,22 @@ fish <-
 
 
 
+np = 10
 
 fleet <- create_fleet(
   fish = fish,
   cost_cv =  0,
   cost_ac = 0,
   cost_slope = 0,
+  q = .1,
   q_cv = 0,
   q_ac = .7,
   q_slope = 0,
   fleet_model = "constant-effort",
   target_catch = 200,
   sigma_effort = 0,
-  length_50_sel = 0.1 * fish$linf,
-  initial_effort = 10000,
+  length_50_sel = 1 * fish$length_50_mature,
+  initial_effort = (fish$m / .1) * np,
   profit_lags =  1,
   beta = 1,
   max_cr_ratio = 0.8,
@@ -56,7 +58,7 @@ sim_noad <- spasm::sim_fishery(
   fish = fish,
   fleet = fleet,
   manager = create_manager(mpa_size = 0.5, year_mpa = 5),
-  num_patches = 100,
+  num_patches = np,
   sim_years = 50,
   burn_years = 1,
   time_step = fish$time_step,
